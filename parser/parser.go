@@ -73,14 +73,13 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 			definition.Meaning = s.Text()
 		})
 
-		s.Find("ul.examples li").Each(func(i int, s *goquery.Selection) {
+		s.Find("ul.examples li span.x").Each(func(i int, s *goquery.Selection) {
 			definition.Examples = append(definition.Examples, s.Text())
 		})
 
 		wordInfo.Definitions = append(wordInfo.Definitions, definition)
 		definition = Definition{}
 	})
-
 }
 
 func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {

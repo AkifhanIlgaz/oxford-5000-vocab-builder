@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	wordInfo, _ := parser.ParseWord("https://www.oxfordlearnersdictionaries.com/definition/english/suburban")
+	wordInfo, _ := parser.ParseWord("https://www.oxfordlearnersdictionaries.com/definition/english/abandon_1")
 
 	x, _ := json.MarshalIndent(wordInfo, "", "\t")
 
