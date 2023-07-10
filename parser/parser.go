@@ -3,12 +3,14 @@ package parser
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
 // TODO: Create custom client for HTTP requests
 // TODO: Create custom errors
+// Should I return errors from parsing functions ?
 
 func ParseWord(wordUrl string) (WordInfo, error) {
 	// TODO: Load HTML and select main container
@@ -28,32 +30,39 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 
 	mainContainer := document.Find("#main-container")
 
-	err = parseHeader(mainContainer, &wordInfo)
-	if err != nil {
-		return wordInfo, fmt.Errorf("parsing word: %w", err)
-	}
-
-	err = parseDefinitions(mainContainer, &wordInfo)
-	if err != nil {
-		return wordInfo, fmt.Errorf("parsing word: %w", err)
-	}
-
-	err = parseIdioms(mainContainer, &wordInfo)
-	if err != nil {
-		return wordInfo, fmt.Errorf("parsing word: %w", err)
-	}
+	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
+	parseDefinitions(mainContainer, &wordInfo)
+	parseIdioms(mainContainer, &wordInfo)
 
 	return wordInfo, nil
 }
 
-func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) error {
-	var wordHeader Header
-
+func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+	// Part Of Speech
 	mainContainer.Find("span.pos").Each(func(i int, s *goquery.Selection) {
-		wordHeader.PartOfSpeech = convertPosConstant(s.Text())
+		wordInfo.Header.PartOfSpeech = s.Text()
 	})
 
-	return nil
+	// CEFR Level
+	mainContainer.Find(".symbols span").Each(func(i int, s *goquery.Selection) {
+		attr, _ := s.Attr("class")
+		if pos, ok := strings.CutPrefix(attr, "ox3ksym_"); ok {
+			wordInfo.Header.CEFRLevel = strings.ToUpper(pos)
+		}
+	})
+
+	// Audio
+	mainContainer.Find(`span.phonetics div div`).Each(func(i int, s *goquery.Selection) {
+		audioUrl, _ := s.Attr("data-src-mp3")
+
+		// We don't need to check `pron-us` since there is only two possibilities
+		if s.HasClass("pron-uk") {
+			wordInfo.Header.Audio.UK = audioUrl
+		} else {
+			wordInfo.Header.Audio.US = audioUrl
+		}
+	})
+
 }
 
 func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) error {

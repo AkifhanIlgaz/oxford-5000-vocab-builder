@@ -8,9 +8,12 @@ type WordInfo struct {
 }
 
 type Header struct {
-	Audio        []string     `json:"audio"`
-	PartOfSpeech PartOfSpeech `json:"partOfSpeech"`
-	CEFRLevel    CEFRLevel    `json:"CEFRLevel"`
+	Audio struct {
+		UK string `json:"UK"`
+		US string `json:"US"`
+	} `json:"audio"`
+	PartOfSpeech string `json:"partOfSpeech"`
+	CEFRLevel    string `json:"CEFRLevel"`
 }
 
 type Definition struct {
