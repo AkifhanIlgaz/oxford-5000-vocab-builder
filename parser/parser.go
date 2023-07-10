@@ -15,7 +15,9 @@ import (
 func ParseWord(wordUrl string) (WordInfo, error) {
 	// TODO: Load HTML and select main container
 	// Pass container to other functions
-	var wordInfo WordInfo
+	wordInfo := WordInfo{
+		Word: strings.Split(wordUrl, "_")[0],
+	}
 
 	resp, err := http.Get(wordUrl)
 	if err != nil {
@@ -31,7 +33,7 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 	mainContainer := document.Find("#main-container")
 
 	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
-	parseDefinitions(mainContainer, &wordInfo)
+	parseDefinitions(mainContainer.Find("ol.senses_multiple > li.sense"), &wordInfo)
 	parseIdioms(mainContainer, &wordInfo)
 
 	return wordInfo, nil
@@ -46,9 +48,7 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 	// CEFR Level
 	mainContainer.Find(".symbols span").Each(func(i int, s *goquery.Selection) {
 		attr, _ := s.Attr("class")
-		if pos, ok := strings.CutPrefix(attr, "ox3ksym_"); ok {
-			wordInfo.Header.CEFRLevel = strings.ToUpper(pos)
-		}
+		wordInfo.Header.CEFRLevel = strings.ToUpper(strings.Split(attr, "_")[1])
 	})
 
 	// Audio
@@ -65,10 +65,24 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 
 }
 
-func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) error {
-	return nil
+func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+	var definition Definition
+
+	mainContainer.Each(func(i int, s *goquery.Selection) {
+		s.Find("span.def").Each(func(i int, s *goquery.Selection) {
+			definition.Meaning = s.Text()
+		})
+
+		s.Find("ul.examples li").Each(func(i int, s *goquery.Selection) {
+			definition.Examples = append(definition.Examples, s.Text())
+		})
+
+		wordInfo.Definitions = append(wordInfo.Definitions, definition)
+		definition = Definition{}
+	})
+
 }
 
-func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) error {
-	return nil
+func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+
 }
