@@ -30,10 +30,10 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 		return wordInfo, fmt.Errorf("parsing word: %w", err)
 	}
 
-	mainContainer := document.Find("#main-container")
+	mainContainer := document.Find("#entryContent")
 
 	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
-	parseDefinitions(mainContainer.Find("ol.senses_multiple li.sense"), &wordInfo)
+	parseDefinitions(mainContainer.Find("ol.senses_multiple").First().Find("li.sense"), &wordInfo)
 	parseIdioms(mainContainer, &wordInfo)
 
 	return wordInfo, nil
@@ -73,7 +73,7 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 			definition.Meaning = s.Text()
 		})
 
-		s.Find("ul.examples li span.x").Each(func(i int, s *goquery.Selection) {
+		s.Find("ul.examples > li span.x").Each(func(i int, s *goquery.Selection) {
 			definition.Examples = append(definition.Examples, s.Text())
 		})
 
