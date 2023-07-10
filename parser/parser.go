@@ -15,9 +15,7 @@ import (
 func ParseWord(wordUrl string) (WordInfo, error) {
 	// TODO: Load HTML and select main container
 	// Pass container to other functions
-	wordInfo := WordInfo{
-		Word: strings.Split(wordUrl, "_")[0],
-	}
+	var wordInfo WordInfo
 
 	resp, err := http.Get(wordUrl)
 	if err != nil {
@@ -40,6 +38,11 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 }
 
 func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+	// HeadingWord
+	mainContainer.Find(".headword").First().Each(func(i int, s *goquery.Selection) {
+		wordInfo.Word = s.Text()
+	})
+
 	// Part Of Speech
 	mainContainer.Find("span.pos").Each(func(i int, s *goquery.Selection) {
 		wordInfo.Header.PartOfSpeech = s.Text()
@@ -87,7 +90,7 @@ func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 		var idiom Idiom
 		idiom.Usage = s.Find("div.top-container").Text()
 
-		s.Find("ol.senses_multiple li.sense").Each(func(i int, s *goquery.Selection) {
+		s.Find(`ol[class^="sense"] li.sense`).Each(func(i int, s *goquery.Selection) {
 			var definition Definition
 			definition.Meaning = s.Find("span.def").Text()
 
