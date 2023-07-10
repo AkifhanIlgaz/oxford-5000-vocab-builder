@@ -33,7 +33,7 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 	mainContainer := document.Find("#main-container")
 
 	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
-	parseDefinitions(mainContainer.Find("ol.senses_multiple > li.sense"), &wordInfo)
+	parseDefinitions(mainContainer.Find("ol.senses_multiple li.sense"), &wordInfo)
 	parseIdioms(mainContainer, &wordInfo)
 
 	return wordInfo, nil
@@ -46,7 +46,7 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 	})
 
 	// CEFR Level
-	mainContainer.Find(".symbols span").Each(func(i int, s *goquery.Selection) {
+	mainContainer.Find(".symbols span").First().Each(func(i int, s *goquery.Selection) {
 		attr, _ := s.Attr("class")
 		wordInfo.Header.CEFRLevel = strings.ToUpper(strings.Split(attr, "_")[1])
 	})
