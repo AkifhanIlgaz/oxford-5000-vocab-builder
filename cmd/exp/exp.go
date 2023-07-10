@@ -14,7 +14,7 @@ const (
 )
 
 func main() {
-	wordInfo, _ := parser.ParseWord(diff)
+	wordInfo, _ := parser.ParseWord(withIdioms)
 
 	x, _ := json.MarshalIndent(wordInfo, "", "\t")
 

@@ -34,7 +34,7 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 
 	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
 	parseDefinitions(mainContainer.Find("ol.senses_multiple").First().Find("li.sense"), &wordInfo)
-	parseIdioms(mainContainer, &wordInfo)
+	parseIdioms(mainContainer.Find("div.idioms .idm-g"), &wordInfo)
 
 	return wordInfo, nil
 }
@@ -83,5 +83,21 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 }
 
 func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+	mainContainer.Each(func(i int, s *goquery.Selection) {
+		var idiom Idiom
+		idiom.Usage = s.Find("div.top-container").Text()
 
+		s.Find("ol.senses_multiple li.sense").Each(func(i int, s *goquery.Selection) {
+			var definition Definition
+			definition.Meaning = s.Find("span.def").Text()
+
+			s.Find("ul.examples li span.x").Each(func(i int, s *goquery.Selection) {
+				definition.Examples = append(definition.Examples, s.Text())
+			})
+
+			idiom.Definitions = append(idiom.Definitions, definition)
+		})
+		wordInfo.Idioms = append(wordInfo.Idioms, idiom)
+		idiom = Idiom{}
+	})
 }

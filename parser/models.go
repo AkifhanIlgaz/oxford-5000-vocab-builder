@@ -23,5 +23,5 @@ type Definition struct {
 
 type Idiom struct {
 	Usage      string     `json:"usage"`
-	Definition Definition `json:"definition"`
+	Definitions []Definition `json:"definition"`
 }
