@@ -28,9 +28,59 @@ func (service *WordService) GetWord(id int) (*WordInfo, error) {
 }
 
 func (service *WordService) BoxLevelUp(wordId int) error {
-	panic("")
+	filter := bson.D{
+		{
+			Key:   "id",
+			Value: wordId,
+		},
+	}
+
+	update := bson.D{
+		{
+			Key: "$inc",
+			Value: bson.D{{
+				Key:   "boxLevel",
+				Value: 1,
+			}},
+		},
+	}
+
+	result, err := service.WordCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("box level up: %w", err)
+	}
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf("cannot found word with id: %v", wordId)
+	}
+
+	return nil
 }
 
 func (service *WordService) BoxLevelDown(wordId int) error {
-	panic("")
+	filter := bson.D{
+		{
+			Key:   "id",
+			Value: wordId,
+		},
+	}
+
+	update := bson.D{
+		{
+			Key: "$inc",
+			Value: bson.D{{
+				Key:   "boxLevel",
+				Value: -1,
+			}},
+		},
+	}
+
+	result, err := service.WordCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return fmt.Errorf("box level up: %w", err)
+	}
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf("cannot found word with id: %v", wordId)
+	}
+
+	return nil
 }

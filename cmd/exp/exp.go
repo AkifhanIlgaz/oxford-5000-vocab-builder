@@ -22,9 +22,13 @@ func main() {
 		}
 	}()
 
-	// wordsCollection := client.Database("Vocab-Builder").Collection("Words")
-	// wordService := models.WordService{
-	// 	WordCollection: wordsCollection,
-	// }
+	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
+	wordService := models.WordService{
+		WordCollection: wordsCollection,
+	}
 
+	err = wordService.BoxLevelDown(-1)
+	if err != nil {
+		panic(err)
+	}
 }
