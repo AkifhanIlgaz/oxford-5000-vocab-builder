@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/helper"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/joho/godotenv"
 )
@@ -30,6 +31,17 @@ func main() {
 	}()
 
 	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
-	helper.InsertToMongo("./word_database/urls.json", wordsCollection)
+	wordService := models.WordService{
+		WordCollection: wordsCollection,
+	}
+
+	word, err := wordService.GetWord(-1)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	b, _ := json.MarshalIndent(&word, "", "  ")
+
+	fmt.Println(string(b))
 
 }
