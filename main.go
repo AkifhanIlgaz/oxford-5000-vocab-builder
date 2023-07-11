@@ -11,7 +11,7 @@ import (
 func main() {
 	godotenv.Load()
 
-	db, err := database.Open(os.Getenv("CONNECTION_STRING"))
+	db, err := database.Open(os.Getenv("MONGODB_URI"))
 	if err != nil {
 		panic(err)
 	}

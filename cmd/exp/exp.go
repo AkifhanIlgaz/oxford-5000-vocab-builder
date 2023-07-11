@@ -1,5 +1,14 @@
 package main
 
+import (
+	"context"
+	"os"
+
+	"github.com/AkifhanIlgaz/vocab-builder/database"
+	"github.com/AkifhanIlgaz/vocab-builder/helper"
+	"github.com/joho/godotenv"
+)
+
 const (
 	withIdioms    = "https://www.oxfordlearnersdictionaries.com/definition/english/about_2"
 	withoutIdioms = "https://www.oxfordlearnersdictionaries.com/definition/english/across_2"
@@ -7,5 +16,21 @@ const (
 )
 
 func main() {
+	godotenv.Load()
+
+	client, err := database.Open(os.Getenv("MONGODB_URI"))
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+
+	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
+	helper.InsertToMongo("./word_database/urls.json", wordsCollection)
+
 
 }

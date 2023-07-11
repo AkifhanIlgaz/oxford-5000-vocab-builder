@@ -1,6 +1,7 @@
 package parser
 
 type WordInfo struct {
+	Id          int          `json:"id"`
 	Word        string       `json:"word"`
 	Header      Header       `json:"header"`
 	Definitions []Definition `json:"definitions"`
@@ -22,6 +23,6 @@ type Definition struct {
 }
 
 type Idiom struct {
-	Usage      string     `json:"usage"`
+	Usage       string       `json:"usage"`
 	Definitions []Definition `json:"definition"`
 }
