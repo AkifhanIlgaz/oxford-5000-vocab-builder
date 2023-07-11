@@ -16,7 +16,7 @@ type WordService struct {
 func (service *WordService) GetWord(id int) (*WordInfo, error) {
 	var wordInfo WordInfo
 
-	filter := bson.D{{"id", id}}
+	filter := bson.D{{Key: "id", Value: id}}
 	err := service.WordCollection.FindOne(context.TODO(), filter).Decode(&wordInfo)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {

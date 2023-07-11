@@ -35,7 +35,7 @@ func main() {
 		WordCollection: wordsCollection,
 	}
 
-	word, err := wordService.GetWord(-1)
+	word, err := wordService.GetWord(1)
 	if err != nil {
 		fmt.Println(err)
 	}
