@@ -2,6 +2,7 @@ package models
 
 type WordInfo struct {
 	Id          int          `json:"id"`
+	Box         int          `json:"box"`
 	Word        string       `json:"word"`
 	Header      Header       `json:"header"`
 	Definitions []Definition `json:"definitions"`

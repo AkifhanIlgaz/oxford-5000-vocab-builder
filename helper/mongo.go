@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/AkifhanIlgaz/vocab-builder/parser"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -55,4 +56,15 @@ func retry(id int, wordUrl string, wordsCollection *mongo.Collection) {
 	wordInfo.Id = id
 	fmt.Println("Inserting", wordUrl)
 	wordsCollection.InsertOne(context.TODO(), wordInfo)
+}
+
+func AddBoxFieldToDocuments(wordsCollection *mongo.Collection) {
+
+	wordsCollection.UpdateMany(context.TODO(), bson.D{}, bson.D{
+		{
+			Key: "$set", Value: bson.D{{
+				Key: "box", Value: 1,
+			}},
+		},
+	})
 }
