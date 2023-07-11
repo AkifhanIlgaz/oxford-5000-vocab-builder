@@ -4,15 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/helper"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/joho/godotenv"
-)
-
-const (
-	withIdioms    = "https://www.oxfordlearnersdictionaries.com/definition/english/about_2"
-	withoutIdioms = "https://www.oxfordlearnersdictionaries.com/definition/english/across_2"
-	diff          = "https://www.oxfordlearnersdictionaries.com/definition/english/reject_1"
 )
 
 func main() {
@@ -29,10 +22,9 @@ func main() {
 		}
 	}()
 
-	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
+	// wordsCollection := client.Database("Vocab-Builder").Collection("Words")
 	// wordService := models.WordService{
 	// 	WordCollection: wordsCollection,
 	// }
 
-	helper.RenameBoxField(wordsCollection)
 }
