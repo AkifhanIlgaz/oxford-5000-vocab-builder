@@ -8,13 +8,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// TODO: Create custom client for HTTP requests
-// TODO: Create custom errors
-// Should I return errors from parsing functions ?
-
 func ParseWord(wordUrl string) (WordInfo, error) {
-	// TODO: Load HTML and select main container
-	// Pass container to other functions
 	var wordInfo WordInfo
 
 	resp, err := http.Get(wordUrl)
