@@ -1,4 +1,4 @@
-package parser
+package models
 
 type WordInfo struct {
 	Id          int          `json:"id"`

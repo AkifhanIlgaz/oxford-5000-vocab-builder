@@ -5,11 +5,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/PuerkitoBio/goquery"
 )
 
-func ParseWord(wordUrl string) (WordInfo, error) {
-	var wordInfo WordInfo
+func ParseWord(wordUrl string) (models.WordInfo, error) {
+	var wordInfo models.WordInfo
 
 	resp, err := http.Get(wordUrl)
 	if err != nil {
@@ -31,7 +32,7 @@ func ParseWord(wordUrl string) (WordInfo, error) {
 	return wordInfo, nil
 }
 
-func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 	// HeadingWord
 	mainContainer.Find(".headword").First().Each(func(i int, s *goquery.Selection) {
 		wordInfo.Word = s.Text()
@@ -62,8 +63,8 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 
 }
 
-func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
-	var definition Definition
+func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
+	var definition models.Definition
 
 	mainContainer.Each(func(i int, s *goquery.Selection) {
 		s.Find("span.def").Each(func(i int, s *goquery.Selection) {
@@ -75,17 +76,17 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 		})
 
 		wordInfo.Definitions = append(wordInfo.Definitions, definition)
-		definition = Definition{}
+		definition = models.Definition{}
 	})
 }
 
-func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
+func parseIdioms(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 	mainContainer.Each(func(i int, s *goquery.Selection) {
-		var idiom Idiom
+		var idiom models.Idiom
 		idiom.Usage = s.Find("div.top-container").Text()
 
 		s.Find(`ol[class^="sense"] li.sense`).Each(func(i int, s *goquery.Selection) {
-			var definition Definition
+			var definition models.Definition
 			definition.Meaning = s.Find("span.def").Text()
 
 			s.Find("ul.examples li span.x").Each(func(i int, s *goquery.Selection) {
@@ -95,6 +96,6 @@ func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 			idiom.Definitions = append(idiom.Definitions, definition)
 		})
 		wordInfo.Idioms = append(wordInfo.Idioms, idiom)
-		idiom = Idiom{}
+		idiom = models.Idiom{}
 	})
 }
