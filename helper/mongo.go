@@ -59,11 +59,20 @@ func retry(id int, wordUrl string, wordsCollection *mongo.Collection) {
 }
 
 func AddBoxFieldToDocuments(wordsCollection *mongo.Collection) {
-
 	wordsCollection.UpdateMany(context.TODO(), bson.D{}, bson.D{
 		{
 			Key: "$set", Value: bson.D{{
 				Key: "box", Value: 1,
+			}},
+		},
+	})
+}
+
+func RenameBoxField(wordsCollection *mongo.Collection) {
+	wordsCollection.UpdateMany(context.TODO(), bson.D{}, bson.D{
+		{
+			Key: "$rename", Value: bson.D{{
+				Key: "box", Value: "boxLevel",
 			}},
 		},
 	})

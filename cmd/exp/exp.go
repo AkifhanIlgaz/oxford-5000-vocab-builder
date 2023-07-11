@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/AkifhanIlgaz/vocab-builder/helper"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/joho/godotenv"
 )
@@ -28,9 +29,10 @@ func main() {
 		}
 	}()
 
-	// wordsCollection := client.Database("Vocab-Builder").Collection("Words")
+	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
 	// wordService := models.WordService{
 	// 	WordCollection: wordsCollection,
 	// }
 
+	helper.RenameBoxField(wordsCollection)
 }

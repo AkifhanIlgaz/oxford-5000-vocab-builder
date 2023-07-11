@@ -27,6 +27,14 @@ func (service *WordService) GetWord(id int) (*WordInfo, error) {
 	return &wordInfo, nil
 }
 
+func (service *WordService) BoxLevelUp(wordId int) error {
+	panic("")
+}
+
+func (service *WordService) BoxLevelDown(wordId int) error {
+	panic("")
+}
+
 // wordsPerDay will be stored on User table or as cookie ?
 func (service *WordService) GetWordPackage(packageId int, wordsPerDay int) []*WordInfo {
 	var words []*WordInfo
