@@ -4,14 +4,14 @@ import (
 	"context"
 	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/database"
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	godotenv.Load()
 
-	db, err := database.Open(os.Getenv("MONGODB_URI"))
+	db, err := models.Open(os.Getenv("MONGODB_URI"))
 	if err != nil {
 		panic(err)
 	}

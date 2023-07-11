@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/helper"
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/joho/godotenv"
 )
 
@@ -18,7 +18,7 @@ const (
 func main() {
 	godotenv.Load()
 
-	client, err := database.Open(os.Getenv("MONGODB_URI"))
+	client, err := models.Open(os.Getenv("MONGODB_URI"))
 	if err != nil {
 		panic(err)
 	}
@@ -31,6 +31,5 @@ func main() {
 
 	wordsCollection := client.Database("Vocab-Builder").Collection("Words")
 	helper.InsertToMongo("./word_database/urls.json", wordsCollection)
-
 
 }
