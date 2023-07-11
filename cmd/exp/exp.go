@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/AkifhanIlgaz/vocab-builder/models"
@@ -34,14 +32,5 @@ func main() {
 	wordService := models.WordService{
 		WordCollection: wordsCollection,
 	}
-
-	word, err := wordService.GetWord(1)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	b, _ := json.MarshalIndent(&word, "", "  ")
-
-	fmt.Println(string(b))
 
 }
