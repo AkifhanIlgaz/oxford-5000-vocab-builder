@@ -1,12 +1,5 @@
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/AkifhanIlgaz/vocab-builder/parser"
-)
-
 const (
 	withIdioms    = "https://www.oxfordlearnersdictionaries.com/definition/english/about_2"
 	withoutIdioms = "https://www.oxfordlearnersdictionaries.com/definition/english/across_2"
@@ -14,9 +7,5 @@ const (
 )
 
 func main() {
-	wordInfo, _ := parser.ParseWord(withIdioms)
 
-	x, _ := json.MarshalIndent(wordInfo, "", "\t")
-
-	fmt.Println(string(x))
 }

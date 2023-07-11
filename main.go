@@ -1,30 +1,25 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"context"
+	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/parser"
-	"github.com/go-chi/chi/v5"
+	"github.com/AkifhanIlgaz/vocab-builder/database"
+	"github.com/joho/godotenv"
 )
 
-const baseUrl = "https://www.oxfordlearnersdictionaries.com/definition/english/"
-
 func main() {
-	router := chi.NewRouter()
+	godotenv.Load()
 
-	router.Get("/{word}", func(w http.ResponseWriter, r *http.Request) {
-		wordInfo, err := parser.ParseWord(baseUrl + chi.URLParam(r, "word"))
-		if err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+	db, err := database.Open(os.Getenv("CONNECTION_STRING"))
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err = db.Disconnect(context.TODO()); err != nil {
+			panic(err)
 		}
+	}()
 
-		x, _ := json.MarshalIndent(wordInfo, "", "\t")
-
-		w.Write(x)
-	})
-
-	fmt.Println("Serving")
-	http.ListenAndServe(":3000", router)
 }

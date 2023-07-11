@@ -10,7 +10,6 @@ import (
 )
 
 // TODO: Read connection string from ENV
-//
 
 func Open(connectionString string) (*mongo.Client, error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
@@ -18,11 +17,11 @@ func Open(connectionString string) (*mongo.Client, error) {
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("connect to mongo: %w", err)
 	}
 
 	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
-		panic(err)
+		return nil, fmt.Errorf("connect to mongo: %w", err)
 	}
 	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
 
