@@ -62,5 +62,33 @@ func loadEnvConfig() (config, error) {
 }
 
 func main() {
+	config, err := loadEnvConfig()
+	if err != nil {
+		panic(err)
+	}
 
+	err = run(config)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func run(cfg config) error {
+	// Check your allowed IP address for mongo
+	_, err := database.OpenMongo(cfg.Mongo)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Connected to mongo")
+	_, err = database.OpenPostgres(cfg.Postgres)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Connected to postgres")
+	_, err = database.OpenBolt(cfg.Bolt)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Connected to bolt")
+	return nil
 }

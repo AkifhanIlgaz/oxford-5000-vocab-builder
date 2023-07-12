@@ -26,14 +26,3 @@ func OpenPostgres(config PostgresConfig) (*sql.DB, error) {
 
 	return db, nil
 }
-
-func DefaultPostgresConfig() PostgresConfig {
-	return PostgresConfig{
-		Host:     "localhost",
-		Port:     "5432",
-		User:     "baloo",
-		Password: "junglebook",
-		DBName:   "lenslocked",
-		SSLMode:  "disable",
-	}
-}

@@ -13,10 +13,11 @@ type MongoConfig struct {
 	ConnectionURI string
 }
 
-func (config MongoConfig) OpenMongo() (*mongo.Client, error) {
+func OpenMongo(config MongoConfig) (*mongo.Client, error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(config.ConnectionURI).SetServerAPIOptions(serverAPI)
 
+	fmt.Println("Trying to connect mongo. If it takes to long add your current ip address from network settings")
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
 		return nil, fmt.Errorf("open mongo: %w", err)
