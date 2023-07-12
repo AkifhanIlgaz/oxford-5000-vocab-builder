@@ -9,9 +9,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func OpenMongo(connectionString string) (*mongo.Client, error) {
+type MongoConfig struct {
+	ConnectionURI string
+}
+
+func (config MongoConfig) OpenMongo() (*mongo.Client, error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(connectionString).SetServerAPIOptions(serverAPI)
+	opts := options.Client().ApplyURI(config.ConnectionURI).SetServerAPIOptions(serverAPI)
 
 	client, err := mongo.Connect(context.TODO(), opts)
 	if err != nil {
