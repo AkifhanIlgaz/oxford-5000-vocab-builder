@@ -5,19 +5,20 @@ import (
 	"os"
 
 	"github.com/AkifhanIlgaz/vocab-builder/models"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
 )
 
 func main() {
 	godotenv.Load()
 
-	db, err := models.Open(os.Getenv("MONGODB_URI"))
+	mongoDB, err := models.OpenMongo(os.Getenv("MONGODB_URI"))
 	if err != nil {
 		panic(err)
 	}
 
 	defer func() {
-		if err = db.Disconnect(context.TODO()); err != nil {
+		if err = mongoDB.Disconnect(context.TODO()); err != nil {
 			panic(err)
 		}
 	}()

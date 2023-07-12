@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Open(connectionString string) (*mongo.Client, error) {
+func OpenMongo(connectionString string) (*mongo.Client, error) {
 	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
 	opts := options.Client().ApplyURI(connectionString).SetServerAPIOptions(serverAPI)
 
