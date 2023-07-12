@@ -56,3 +56,46 @@ func (service *UserService) Create(email, password string) (*User, error) {
 
 	return &user, nil
 }
+
+func (service *UserService) Authenticate(email, password string) (*User, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	user := User{
+		Email: email,
+	}
+
+	row := service.DB.QueryRow(`
+		SELECT id, password_hash FROM users
+		WHERE email = $1;
+	`, user.Email)
+
+	err := row.Scan(&user.Id, &user.PasswordHash)
+	if err != nil {
+		return nil, fmt.Errorf("authenticate user: %w", err)
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	if err != nil {
+		return nil, fmt.Errorf("authenticate user: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (service *UserService) UpdatePassword(userId int, password string) error {
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("update password: %w", err)
+	}
+	passwordHash := string(hashedBytes)
+
+	_, err = service.DB.Exec(`
+		UPDATE users
+		SET password_hash = $2
+		WHERE id = $1;
+	`, userId, passwordHash)
+	if err != nil {
+		return fmt.Errorf("update password: %w", err)
+	}
+
+	return nil
+}
