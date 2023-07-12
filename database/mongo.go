@@ -23,7 +23,7 @@ func OpenMongo(config MongoConfig) (*mongo.Client, error) {
 		return nil, fmt.Errorf("open mongo: %w", err)
 	}
 
-	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
+	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Err(); err != nil {
 		return nil, fmt.Errorf("open mongo: %w", err)
 	}
 	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
