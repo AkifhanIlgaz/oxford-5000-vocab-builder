@@ -1,26 +1,33 @@
 package main
 
 import (
-	"context"
-	"os"
+	"fmt"
 
-	"github.com/AkifhanIlgaz/vocab-builder/models"
+	"github.com/AkifhanIlgaz/vocab-builder/database"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
 )
 
-func main() {
-	godotenv.Load()
+// TODO: Add SMTP and CSRF config
+type config struct {
+	Postgres database.PostgresConfig
+	Mongo    database.MongoConfig
+	Bolt     database.BoltConfig // Use home dir
+	Server   struct {
+		Address string
+	}
+}
 
-	mongoDB, err := models.OpenMongo(os.Getenv("MONGODB_URI"))
+func loadEnvConfig() (config, error) {
+	var cfg config
+	err := godotenv.Load()
 	if err != nil {
-		panic(err)
+		return cfg, fmt.Errorf("load env: %w", err)
 	}
 
-	defer func() {
-		if err = mongoDB.Disconnect(context.TODO()); err != nil {
-			panic(err)
-		}
-	}()
+	return config{}, nil
+}
+
+func main() {
 
 }
