@@ -1,14 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
+	"github.com/boltdb/bolt"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // TODO: Add SMTP and CSRF config
@@ -74,25 +77,34 @@ func main() {
 	}
 }
 
-func run(cfg config) error {
+func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, error) {
 	// Check your allowed IP address for mongo
 	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to mongo")
 
 	postgres, err := database.OpenPostgres(cfg.Postgres)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to postgres")
 
 	bolt, err := database.OpenBolt(cfg.Bolt)
 	if err != nil {
-		return err
+		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to bolt")
+
+	return mongo, postgres, bolt, nil
+}
+
+func run(cfg config) error {
+	mongo, postgres, bolt, err := initServices(cfg)
+	if err != nil {
+		return err
+	}
 
 	userService := models.UserService{
 		DB: postgres,
