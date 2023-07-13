@@ -102,7 +102,9 @@ func run(cfg config) error {
 		Client: mongo,
 	}
 
-	
+	boxService := models.BoxService{
+		DB: bolt,
+	}
 
 	return nil
 }
