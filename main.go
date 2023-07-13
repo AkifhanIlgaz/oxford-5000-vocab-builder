@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/AkifhanIlgaz/vocab-builder/database"
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
 )
@@ -75,20 +76,33 @@ func main() {
 
 func run(cfg config) error {
 	// Check your allowed IP address for mongo
-	_, err := database.OpenMongo(cfg.Mongo)
+	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
 		return err
 	}
 	fmt.Println("Connected to mongo")
-	_, err = database.OpenPostgres(cfg.Postgres)
+
+	postgres, err := database.OpenPostgres(cfg.Postgres)
 	if err != nil {
 		return err
 	}
 	fmt.Println("Connected to postgres")
-	_, err = database.OpenBolt(cfg.Bolt)
+
+	bolt, err := database.OpenBolt(cfg.Bolt)
 	if err != nil {
 		return err
 	}
 	fmt.Println("Connected to bolt")
+
+	userService := models.UserService{
+		DB: postgres,
+	}
+
+	wordService := models.WordService{
+		Client: mongo,
+	}
+
+	
+
 	return nil
 }

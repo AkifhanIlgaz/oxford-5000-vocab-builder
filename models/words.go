@@ -37,14 +37,15 @@ type Idiom struct {
 }
 
 type WordService struct {
-	WordCollection *mongo.Collection
+	Client *mongo.Client
 }
 
 func (service *WordService) GetWord(id int) (*WordInfo, error) {
 	var wordInfo WordInfo
+	wordCollection := service.Client.Database("Vocab-Builder").Collection("Words")
 
 	filter := bson.D{{Key: "id", Value: id}}
-	err := service.WordCollection.FindOne(context.TODO(), filter).Decode(&wordInfo)
+	err := wordCollection.FindOne(context.TODO(), filter).Decode(&wordInfo)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("get word: %w", err)
@@ -73,7 +74,7 @@ func (service *WordService) BoxLevelUp(wordId int) error {
 		},
 	}
 
-	result, err := service.WordCollection.UpdateOne(context.TODO(), filter, update)
+	result, err := wordCollection.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return fmt.Errorf("box level up: %w", err)
 	}
