@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/boltdb/bolt v1.3.1
+	github.com/go-chi/chi/v5 v5.0.8
 	github.com/jackc/pgx/v4 v4.18.1
 )
 

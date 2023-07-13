@@ -3,12 +3,15 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/boltdb/bolt"
+	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -118,5 +121,21 @@ func run(cfg config) error {
 		DB: bolt,
 	}
 
-	return nil
+	sessionService := models.SessionService{
+		DB: postgres,
+	}
+
+	r := chi.NewRouter()
+
+	usersController := controllers.Users{
+		UserService:    &userService,
+		WordService:    &wordService,
+		BoxService:     &boxService,
+		SessionService: &sessionService,
+	}
+
+	r.Post("/login", usersController.Create)
+
+	fmt.Println("Starting server on", cfg.Server.Address)
+	return http.ListenAndServe(cfg.Server.Address, r)
 }
