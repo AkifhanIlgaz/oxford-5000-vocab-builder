@@ -11,7 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var ErrEmailTaken = errors.New("models: email address is already in use")
+var (
+	ErrEmailTaken    = errors.New("models: email address is already in use")
+	ErrWrongPassword = errors.New("models: wrong password")
+)
 
 type User struct {
 	Id           int
@@ -77,7 +80,7 @@ func (service *UserService) Authenticate(email, password string) (*User, error) 
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
 	if err != nil {
-		return nil, fmt.Errorf("authenticate user: %w", err)
+		return nil, ErrWrongPassword
 	}
 
 	return &user, nil

@@ -15,7 +15,7 @@ type Users struct {
 	BoxService     *models.BoxService
 }
 
-func (u Users) Create(w http.ResponseWriter, r *http.Request) {
+func (u Users) SignUp(w http.ResponseWriter, r *http.Request) {
 	// Parse form
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -41,4 +41,33 @@ func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 	setCookie(w, CookieSession, session.Token)
 
 	fmt.Fprintln(w, "User successfully created")
+}
+
+func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
+	// Parse data from request
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	// Check if a given email and password matches within database
+	user, err := u.UserService.Authenticate(email, password)
+	if err != nil {
+		if errors.Is(err, models.ErrWrongPassword) {
+			// TODO: Appropriate status code
+			http.Error(w, "Wrong password", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	// create session token
+	session, err := u.SessionService.Create(user.Id)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	setCookie(w, CookieSession, session.Token)
+
+	fmt.Fprint(w, "Logged in successfully")
 }

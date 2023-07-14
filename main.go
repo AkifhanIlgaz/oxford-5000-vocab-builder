@@ -134,7 +134,8 @@ func run(cfg config) error {
 		SessionService: &sessionService,
 	}
 
-	r.Post("/login", usersController.Create)
+	r.Post("/signup", usersController.SignUp)
+	r.Post("/signin", usersController.SignIn)
 
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)
