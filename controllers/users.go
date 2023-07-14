@@ -94,8 +94,14 @@ func (u Users) SignOut(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Logged out")
 }
 
+func (u Users) CurrentUser(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+
+	fmt.Fprint(w, user)
+}
+
 type UserMiddleware struct {
-	SessionService models.SessionService
+	SessionService *models.SessionService
 }
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
@@ -122,6 +128,7 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := context.User(r.Context())
+		fmt.Println(user)
 		if user == nil {
 			// TODO: Redirect
 			http.Error(w, "Please login", http.StatusForbidden)

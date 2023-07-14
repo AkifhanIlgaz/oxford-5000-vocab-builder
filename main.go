@@ -134,10 +134,19 @@ func run(cfg config) error {
 		SessionService: &sessionService,
 	}
 
+	userMiddleware := controllers.UserMiddleware{
+		SessionService: &sessionService,
+	}
+
+	r.Use(userMiddleware.SetUser)
+
 	r.Post("/signup", usersController.SignUp)
 	r.Post("/signin", usersController.SignIn)
 	r.Post("/signout", usersController.SignOut)
-
+	r.Route("/users/me", func(r chi.Router) {
+		r.Use(userMiddleware.RequireUser)
+		r.Get("/", usersController.CurrentUser)
+	})
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)
 }

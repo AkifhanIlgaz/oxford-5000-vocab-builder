@@ -55,7 +55,7 @@ func (service *SessionService) User(token string) (*User, error) {
 	var user User
 
 	row := service.DB.QueryRow(`
-		SELECT users.id
+		SELECT users.id,
 				users.email,
 				users.password_hash
 		FROM sessions 
