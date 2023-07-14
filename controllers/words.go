@@ -14,7 +14,6 @@ type WordsController struct {
 }
 
 func (wc WordsController) WordWithId(w http.ResponseWriter, r *http.Request) {
-	// TODO: Update wordservice getword function to return words have different POS
 	wordId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "Invalid word ID", http.StatusNotFound)

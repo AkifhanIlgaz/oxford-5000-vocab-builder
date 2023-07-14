@@ -37,7 +37,7 @@ type Idiom struct {
 }
 
 type WordService struct {
-	Client *mongo.Client
+	Client *mongo.Client // Should I store words collection ?
 }
 
 func (service *WordService) GetWord(id int) (*WordInfo, error) {
