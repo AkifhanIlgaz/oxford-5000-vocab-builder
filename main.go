@@ -136,6 +136,7 @@ func run(cfg config) error {
 
 	r.Post("/signup", usersController.SignUp)
 	r.Post("/signin", usersController.SignIn)
+	r.Post("/signout", usersController.SignOut)
 
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)

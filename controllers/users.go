@@ -71,3 +71,25 @@ func (u Users) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprint(w, "Logged in successfully")
 }
+
+func (u Users) SignOut(w http.ResponseWriter, r *http.Request) {
+	// Read session token from request
+	token, err := readCookie(r, CookieSession)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	// Delete cookie
+	if err := u.SessionService.Delete(token); err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	deleteCookie(w, CookieSession)
+
+	fmt.Fprint(w, "Logged out")
+
+}
