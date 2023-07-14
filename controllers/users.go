@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -16,10 +17,28 @@ type Users struct {
 
 func (u Users) Create(w http.ResponseWriter, r *http.Request) {
 	// Parse form
-	// Used parsed information to create new user
-	// Create session token
-	// set cookie
+	email := r.FormValue("email")
+	password := r.FormValue("password")
 
-	fmt.Println(r.FormValue("email"), r.FormValue("password"))
-	fmt.Fprintln(w, "Create user endpoint")
+	// Used parsed information to create new user
+	user, err := u.UserService.Create(email, password)
+	if err != nil {
+		if errors.Is(err, models.ErrEmailTaken) {
+			// TODO: Return with appropriate status code and error message
+			http.Error(w, models.ErrEmailTaken.Error(), http.StatusNotFound)
+			return
+		}
+	}
+
+	// Create session token
+	session, err := u.SessionService.Create(user.Id)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	// set cookie
+	setCookie(w, CookieSession, session.Token)
+
+	fmt.Fprintln(w, "User successfully created")
 }
