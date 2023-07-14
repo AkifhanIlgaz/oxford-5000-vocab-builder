@@ -127,11 +127,15 @@ func run(cfg config) error {
 
 	r := chi.NewRouter()
 
-	usersController := controllers.Users{
+	usersController := controllers.UsersController{
 		UserService:    &userService,
 		WordService:    &wordService,
 		BoxService:     &boxService,
 		SessionService: &sessionService,
+	}
+
+	wordsController := controllers.WordsController{
+		WordService: &wordService,
 	}
 
 	userMiddleware := controllers.UserMiddleware{
@@ -147,6 +151,9 @@ func run(cfg config) error {
 		r.Use(userMiddleware.RequireUser)
 		r.Get("/", usersController.CurrentUser)
 	})
+
+	r.Get("/word/{id}", wordsController.WordWithId)
+
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)
 }
