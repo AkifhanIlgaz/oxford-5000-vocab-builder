@@ -84,7 +84,27 @@ func (w *Word) BoxLevelUp() error {
 }
 
 func (w *Word) BoxLevelDown() error {
+	boxLevel := w.BoxLevel
+
+	if boxLevel <= BoxLevel0 {
+		return errors.New("min level")
+	}
+
+	w.BoxLevel--
+	switch w.BoxLevel {
+	case BoxLevel0:
+		w.NextRep = time.Now()
+	case BoxLevel1:
+		w.NextRep = w.NextRep.Add(2 * Day)
+		w.RepOnLevel1 = 0
+	case BoxLevel2:
+		w.NextRep = w.NextRep.Add(1 * Week)
+	case BoxLevel3:
+		w.NextRep = w.NextRep.Add(1 * Month)
+	}
+	
 	return nil
+
 }
 
 type BoxService struct {
