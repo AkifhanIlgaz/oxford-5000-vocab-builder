@@ -16,6 +16,11 @@ import (
 		Level 4 => 3 Months
 */
 
+var (
+	ErrMaxLevel = errors.New("max level ")
+	ErrMinLevel = errors.New("min level")
+)
+
 type BoxLevel int
 
 const (
@@ -71,23 +76,16 @@ func (w *Word) BoxLevelUp() error {
 		}
 	} else {
 		w.NextRep = w.NextRep.Add(3 * Month)
-		return errors.New("max level reached")
+		return ErrMaxLevel
 	}
-
-	// TODO: Create constants for box levels and additional times for each box
-	// TODO: Box level [0,4]
-	// TODO: Word must be repeated 3 times on level 1 before moving to level 2.
-	// Create additional field to determine how many times the word is repeated in level 2.
-	// Reset this field when word is level down
 
 	return nil
 }
 
 func (w *Word) BoxLevelDown() error {
 	boxLevel := w.BoxLevel
-
 	if boxLevel <= BoxLevel0 {
-		return errors.New("min level")
+		return ErrMinLevel
 	}
 
 	w.BoxLevel--
@@ -102,9 +100,8 @@ func (w *Word) BoxLevelDown() error {
 	case BoxLevel3:
 		w.NextRep = w.NextRep.Add(1 * Month)
 	}
-	
-	return nil
 
+	return nil
 }
 
 type BoxService struct {
