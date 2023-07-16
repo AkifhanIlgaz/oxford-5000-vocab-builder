@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"sort"
 	"time"
 
 	"github.com/boltdb/bolt"
@@ -43,6 +44,22 @@ type WordBox []Word
 
 func NewWordBox() WordBox {
 	return make([]Word, wordBoxLen)
+}
+
+func (wb WordBox) GetWordIds() []Word {
+	var wordIds []Word
+
+	for _, word := range wb {
+		if word.NextRep.Before(time.Now()) {
+			wordIds = append(wordIds, word)
+		}
+	}
+
+	sort.Slice(wordIds, func(i, j int) bool {
+		return wordIds[i].BoxLevel > wordIds[j].BoxLevel
+	})
+
+	return wordIds
 }
 
 type Word struct {
