@@ -157,8 +157,9 @@ func run(cfg config) error {
 	})
 
 	r.Get("/words/{id}", wordsController.WordWithId)
-	r.Get("/words/{level}", boxController.GetWordByLevel)
-	r.Get("/words/today", boxController.GetTodaysWords)
+	r.Get("/words/box/{level}", boxController.GetWordByLevel)
+	r.Get("/words/box/today", boxController.GetTodaysWords)
+
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)
 }

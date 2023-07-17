@@ -12,10 +12,10 @@ type BoxController struct {
 }
 
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Get todays words"))
 
 }
 
 func (bc *BoxController) GetWordByLevel(w http.ResponseWriter, r *http.Request) {
 	// TODO: Extract user from request's context
 }
-

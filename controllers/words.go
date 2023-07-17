@@ -14,11 +14,13 @@ type WordsController struct {
 }
 
 func (wc WordsController) WordWithId(w http.ResponseWriter, r *http.Request) {
+
 	wordId, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
 		http.Error(w, "Invalid word ID", http.StatusNotFound)
 		return
 	}
+	w.Write([]byte(r.URL.RawPath))
 
 	word, err := wc.WordService.GetWord(wordId)
 	if err != nil {
