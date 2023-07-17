@@ -19,4 +19,3 @@ func (bc *BoxController) GetWordByLevel(w http.ResponseWriter, r *http.Request) 
 	// TODO: Extract user from request's context
 }
 
-

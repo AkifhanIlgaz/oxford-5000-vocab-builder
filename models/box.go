@@ -64,7 +64,7 @@ func (wb WordBox) getWordIds() []Word {
 
 type Word struct {
 	Id          int
-	BoxLevel    BoxLevel
+	BoxLevel    int
 	RepOnLevel1 int
 	NextRep     time.Time
 }
@@ -72,7 +72,7 @@ type Word struct {
 func (w *Word) boxLevelUp() error {
 	boxLevel := w.BoxLevel
 
-	if boxLevel == BoxLevel1 && w.RepOnLevel1 < 3 {
+	if boxLevel == 1 && w.RepOnLevel1 < 3 {
 		w.RepOnLevel1++
 		w.NextRep = w.NextRep.Add(2 * Day)
 		return nil
@@ -82,13 +82,13 @@ func (w *Word) boxLevelUp() error {
 	if boxLevel < 4 {
 		w.BoxLevel++
 		switch w.BoxLevel {
-		case BoxLevel1:
+		case 1:
 			w.NextRep = w.NextRep.Add(2 * Day)
-		case BoxLevel2:
+		case 2:
 			w.NextRep = w.NextRep.Add(1 * Week)
-		case BoxLevel3:
+		case 3:
 			w.NextRep = w.NextRep.Add(1 * Month)
-		case BoxLevel4:
+		case 4:
 			w.NextRep = w.NextRep.Add(3 * Month)
 		}
 	} else {
@@ -101,20 +101,20 @@ func (w *Word) boxLevelUp() error {
 
 func (w *Word) boxLevelDown() error {
 	boxLevel := w.BoxLevel
-	if boxLevel <= BoxLevel0 {
+	if boxLevel <= 0 {
 		return ErrMinLevel
 	}
 
 	w.BoxLevel--
 	switch w.BoxLevel {
-	case BoxLevel0:
+	case 0:
 		w.NextRep = time.Now()
-	case BoxLevel1:
+	case 1:
 		w.NextRep = w.NextRep.Add(2 * Day)
 		w.RepOnLevel1 = 0
-	case BoxLevel2:
+	case 2:
 		w.NextRep = w.NextRep.Add(1 * Week)
-	case BoxLevel3:
+	case 3:
 		w.NextRep = w.NextRep.Add(1 * Month)
 	}
 
