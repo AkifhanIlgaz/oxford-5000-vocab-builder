@@ -46,7 +46,7 @@ func NewWordBox() WordBox {
 	return make([]Word, wordBoxLen)
 }
 
-func (wb WordBox) GetWordIds() []Word {
+func (wb WordBox) getWordIds() []Word {
 	var wordIds []Word
 
 	for _, word := range wb {
@@ -69,7 +69,7 @@ type Word struct {
 	NextRep     time.Time
 }
 
-func (w *Word) BoxLevelUp() error {
+func (w *Word) boxLevelUp() error {
 	boxLevel := w.BoxLevel
 
 	if boxLevel == BoxLevel1 && w.RepOnLevel1 < 3 {
@@ -99,7 +99,7 @@ func (w *Word) BoxLevelUp() error {
 	return nil
 }
 
-func (w *Word) BoxLevelDown() error {
+func (w *Word) boxLevelDown() error {
 	boxLevel := w.BoxLevel
 	if boxLevel <= BoxLevel0 {
 		return ErrMinLevel
@@ -123,4 +123,12 @@ func (w *Word) BoxLevelDown() error {
 
 type BoxService struct {
 	DB *bolt.DB
+}
+
+func (service *BoxService) GetTodaysWords(userId int) ([]*Word, error) {
+	panic("Implement this function")
+}
+
+func (service *BoxService) GetWordsByLevel(userId int, boxLevel int) ([]*Word, error) {
+	panic("Implement")
 }

@@ -138,6 +138,10 @@ func run(cfg config) error {
 		WordService: &wordService,
 	}
 
+	boxController := controllers.BoxController{
+		BoxService: &boxService,
+	}
+
 	userMiddleware := controllers.UserMiddleware{
 		SessionService: &sessionService,
 	}
@@ -152,8 +156,9 @@ func run(cfg config) error {
 		r.Get("/", usersController.CurrentUser)
 	})
 
-	r.Get("/word/{id}", wordsController.WordWithId)
-
+	r.Get("/words/{id}", wordsController.WordWithId)
+	r.Get("/words/{level}", boxController.GetWordByLevel)
+	r.Get("/words/today", boxController.GetTodaysWords)
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)
 }

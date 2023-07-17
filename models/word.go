@@ -55,3 +55,13 @@ func (service *WordService) GetWord(id int) (*WordInfo, error) {
 
 	return &wordInfo, nil
 }
+
+func (service *WordService) GetWordWithCollection(collection *mongo.Collection, id int) (*WordInfo, error) {
+	// TODO: Pass the collection as parameter 
+	panic("")
+}
+
+func (service *WordService) GetWords(ids []int) ([]*WordInfo, error) {
+	// TODO: Get multiple words
+	panic("Get multiple words")
+}
