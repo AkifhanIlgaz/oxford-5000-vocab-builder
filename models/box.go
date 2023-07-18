@@ -25,16 +25,6 @@ var (
 	ErrMinLevel = errors.New("min level")
 )
 
-type BoxLevel int
-
-const (
-	BoxLevel0 BoxLevel = iota
-	BoxLevel1
-	BoxLevel2
-	BoxLevel3
-	BoxLevel4
-)
-
 const (
 	Day   = 24 * time.Hour
 	Week  = 7 * Day
@@ -53,11 +43,11 @@ type Word struct {
 	NextRep     time.Time
 }
 
-func (w *Word) boxLevelUp() error {
+func (w *Word) levelUp() error {
 	boxLevel := w.BoxLevel
 
-	if boxLevel == 1 && w.RepOnLevel1 < 3 {
-		w.RepOnLevel1++
+	if boxLevel == 1 && w.RepOnLevel1 < 2 {
+		w.RepOnLevel1 += 1
 		w.NextRep = w.NextRep.Add(2 * Day)
 		return nil
 	}
@@ -83,7 +73,7 @@ func (w *Word) boxLevelUp() error {
 	return nil
 }
 
-func (w *Word) boxLevelDown() error {
+func (w *Word) levelDown() error {
 	boxLevel := w.BoxLevel
 	if boxLevel <= 0 {
 		return ErrMinLevel
@@ -112,8 +102,14 @@ type BoxService struct {
 func (service *BoxService) CreateWordBox(userId int) error {
 	err := service.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(boxBucket))
-		// TODO: Change length to 5948
-		wordBox := WordBox(make([]Word, 10))
+		var wordBox WordBox
+		for i := 0; i < wordBoxLen; i++ {
+			wordBox = append(wordBox, Word{
+				Id:      i,
+				NextRep: time.Now(),
+			})
+		}
+
 		return b.Put(itob(userId), serializeWordBox(wordBox))
 	})
 
@@ -124,7 +120,7 @@ func (service *BoxService) CreateWordBox(userId int) error {
 	return nil
 }
 
-func (service *BoxService) getWordBox(userId int) (WordBox, error) {
+func (service *BoxService) GetWordBox(userId int) (WordBox, error) {
 	var wordBox WordBox
 
 	err := service.DB.View(func(tx *bolt.Tx) error {
@@ -143,7 +139,7 @@ func (service *BoxService) getWordBox(userId int) (WordBox, error) {
 func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
 	var todaysWords []Word
 
-	wordBox, err := service.getWordBox(userId)
+	wordBox, err := service.GetWordBox(userId)
 	if err != nil {
 		return nil, fmt.Errorf("get todays words: %w", err)
 	}
@@ -161,16 +157,39 @@ func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
 	return todaysWords, nil
 }
 
-func (service *BoxService) GetWord(userId int, wordId int) (Word, error) {
-	panic("Implement this function")
+func (service *BoxService) updateWordBox(userId int, wordBox WordBox) error {
+	err := service.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(boxBucket))
+		return b.Put(itob(userId), serializeWordBox(wordBox))
+	})
+
+	if err != nil {
+		return fmt.Errorf("update wordbox: %w", err)
+	}
+
+	return nil
 }
 
 func (service *BoxService) LevelUp(userId int, wordId int) error {
-	panic("Implement this function")
+	wordBox, err := service.GetWordBox(userId)
+	if err != nil {
+		return fmt.Errorf("level up: %w", err)
+	}
+	w := &wordBox[wordId]
+	w.levelUp()
+
+	return service.updateWordBox(userId, wordBox)
 }
 
 func (service *BoxService) LevelDown(userId int, wordId int) error {
-	panic("Implement this function")
+	wordBox, err := service.GetWordBox(userId)
+	if err != nil {
+		return fmt.Errorf("level up: %w", err)
+	}
+
+	w := &wordBox[wordId]
+	w.levelDown()
+	return service.updateWordBox(userId, wordBox)
 }
 
 func itob(v int) []byte {
