@@ -12,6 +12,7 @@ type BoxController struct {
 }
 
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
+	
 	w.Write([]byte("Get todays words"))
 
 }

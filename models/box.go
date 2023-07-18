@@ -1,7 +1,10 @@
 package models
 
 import (
+	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"sort"
 	"time"
 
@@ -39,28 +42,9 @@ const (
 )
 
 const wordBoxLen = 5948
+const boxBucket = "Boxes"
 
 type WordBox []Word
-
-func NewWordBox() WordBox {
-	return make([]Word, wordBoxLen)
-}
-
-func (wb WordBox) getWordIds() []Word {
-	var wordIds []Word
-
-	for _, word := range wb {
-		if word.NextRep.Before(time.Now()) {
-			wordIds = append(wordIds, word)
-		}
-	}
-
-	sort.Slice(wordIds, func(i, j int) bool {
-		return wordIds[i].BoxLevel > wordIds[j].BoxLevel
-	})
-
-	return wordIds
-}
 
 type Word struct {
 	Id          int
@@ -125,10 +109,87 @@ type BoxService struct {
 	DB *bolt.DB
 }
 
-func (service *BoxService) GetTodaysWords(userId int) ([]*Word, error) {
+func (service *BoxService) CreateWordBox(userId int) error {
+	err := service.DB.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(boxBucket))
+		// TODO: Change length to 5948
+		wordBox := WordBox(make([]Word, 10))
+		return b.Put(itob(userId), serializeWordBox(wordBox))
+	})
+
+	if err != nil {
+		return fmt.Errorf("create wordbox: %w", err)
+	}
+
+	return nil
+}
+
+func (service *BoxService) getWordBox(userId int) (WordBox, error) {
+	var wordBox WordBox
+
+	err := service.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(boxBucket))
+		wordBox = deserializeWordBox(b.Get(itob(userId)))
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("get wordBox: %w", err)
+	}
+
+	return wordBox, nil
+}
+
+func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
+	var todaysWords []Word
+
+	wordBox, err := service.getWordBox(userId)
+	if err != nil {
+		return nil, fmt.Errorf("get todays words: %w", err)
+	}
+
+	for _, word := range wordBox {
+		if word.NextRep.Before(time.Now()) {
+			todaysWords = append(todaysWords, word)
+		}
+	}
+
+	sort.Slice(todaysWords, func(i, j int) bool {
+		return todaysWords[i].BoxLevel > todaysWords[j].BoxLevel
+	})
+
+	return todaysWords, nil
+}
+
+func (service *BoxService) GetWord(userId int, wordId int) (Word, error) {
 	panic("Implement this function")
 }
 
-func (service *BoxService) GetWordsByLevel(userId int, boxLevel int) ([]*Word, error) {
-	panic("Implement")
+func (service *BoxService) LevelUp(userId int, wordId int) error {
+	panic("Implement this function")
+}
+
+func (service *BoxService) LevelDown(userId int, wordId int) error {
+	panic("Implement this function")
+}
+
+func itob(v int) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(v))
+	return b
+}
+
+func btoi(b []byte) int {
+	return int(binary.BigEndian.Uint64(b))
+}
+
+func serializeWordBox(wordBox WordBox) []byte {
+	b, _ := json.MarshalIndent(wordBox, "", "  ")
+	return b
+}
+
+func deserializeWordBox(b []byte) WordBox {
+	var wb WordBox
+	json.Unmarshal(b, &wb)
+	return wb
 }

@@ -17,5 +17,15 @@ func OpenBolt(config BoltConfig) (*bolt.DB, error) {
 		return nil, fmt.Errorf("open bolt: %w", err)
 	}
 
+	if err := db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucket([]byte("Boxes"))
+		if err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("open bolt: %w", err)
+	}
+
 	return db, nil
 }
