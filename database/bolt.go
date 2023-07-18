@@ -18,7 +18,7 @@ func OpenBolt(config BoltConfig) (*bolt.DB, error) {
 	}
 
 	if err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucket([]byte("Boxes"))
+		_, err := tx.CreateBucketIfNotExists([]byte("Boxes"))
 		if err != nil {
 			return fmt.Errorf("create bucket: %s", err)
 		}
