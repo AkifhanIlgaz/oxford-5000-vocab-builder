@@ -120,7 +120,7 @@ func (service *BoxService) CreateWordBox(userId int) error {
 	return nil
 }
 
-func (service *BoxService) GetWordBox(userId int) (WordBox, error) {
+func (service *BoxService) getWordBox(userId int) (WordBox, error) {
 	var wordBox WordBox
 
 	err := service.DB.View(func(tx *bolt.Tx) error {
@@ -139,7 +139,7 @@ func (service *BoxService) GetWordBox(userId int) (WordBox, error) {
 func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
 	var todaysWords []Word
 
-	wordBox, err := service.GetWordBox(userId)
+	wordBox, err := service.getWordBox(userId)
 	if err != nil {
 		return nil, fmt.Errorf("get todays words: %w", err)
 	}
@@ -171,7 +171,7 @@ func (service *BoxService) updateWordBox(userId int, wordBox WordBox) error {
 }
 
 func (service *BoxService) LevelUp(userId int, wordId int) error {
-	wordBox, err := service.GetWordBox(userId)
+	wordBox, err := service.getWordBox(userId)
 	if err != nil {
 		return fmt.Errorf("level up: %w", err)
 	}
@@ -182,7 +182,7 @@ func (service *BoxService) LevelUp(userId int, wordId int) error {
 }
 
 func (service *BoxService) LevelDown(userId int, wordId int) error {
-	wordBox, err := service.GetWordBox(userId)
+	wordBox, err := service.getWordBox(userId)
 	if err != nil {
 		return fmt.Errorf("level up: %w", err)
 	}
