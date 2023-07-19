@@ -128,13 +128,12 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		user := context.User(r.Context())
-		fmt.Println(user)
 		if user == nil {
 			// TODO: Redirect
 			http.Error(w, "Please login", http.StatusForbidden)
 			return
 		}
-
+		
 		next.ServeHTTP(w, r)
 	})
 }

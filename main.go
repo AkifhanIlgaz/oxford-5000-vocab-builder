@@ -139,7 +139,8 @@ func run(cfg config) error {
 	}
 
 	boxController := controllers.BoxController{
-		BoxService: &boxService,
+		BoxService:  &boxService,
+		WordService: &wordService,
 	}
 
 	userMiddleware := controllers.UserMiddleware{
@@ -156,9 +157,17 @@ func run(cfg config) error {
 		r.Get("/", usersController.CurrentUser)
 	})
 
+	r.Route("/box", func(r chi.Router) {
+		r.Use(userMiddleware.RequireUser)
+		// TODO: Delete get wordbox endpoint
+		r.Get("/", boxController.GetWordBox)
+		r.Post("/new", boxController.NewWordBox)
+		r.Get("/today", boxController.GetTodaysWords)
+		r.Post("/levelup/{id}", boxController.LevelUp)
+		r.Post("/leveldown/{id}", boxController.LevelDown)
+	})
+
 	r.Get("/words/{id}", wordsController.WordWithId)
-	r.Get("/words/box/{level}", boxController.GetWordByLevel)
-	r.Get("/words/box/today", boxController.GetTodaysWords)
 
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)

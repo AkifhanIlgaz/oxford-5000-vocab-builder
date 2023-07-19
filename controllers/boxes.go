@@ -1,33 +1,102 @@
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 
+	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
+	"github.com/go-chi/chi/v5"
 )
 
 type BoxController struct {
-	BoxService *models.BoxService
+	BoxService  *models.BoxService
+	WordService *models.WordService
 	// TODO: Add other services if necessary
+	// TODO: Add encoder field to service structs
 }
 
+// TODO: Delete this function
+func (bc *BoxController) GetWordBox(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+
+	words, _ := bc.BoxService.GetWordBox(user.Id)
+
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+
+	enc.Encode(words[:3])
+}
+
+// OK
 func (bc *BoxController) NewWordBox(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
 
+	err := bc.BoxService.CreateWordBox(user.Id)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	// TODO: Redirect to todays words or home page
+	fmt.Fprint(w, "redirected to box/today")
 }
 
+// OK
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Get todays words"))
+	user := context.User(r.Context())
+	words, err := bc.BoxService.GetTodaysWords(user.Id)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	var wordInfos []*models.WordInfo
+
+	for i := 0; i < 3; i++ {
+		wordInfo, _ := bc.WordService.GetWord(words[i].Id)
+		wordInfos = append(wordInfos, wordInfo)
+	}
+
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+
+	enc.Encode(wordInfos)
 }
 
-func (bc *BoxController) GetWordByLevel(w http.ResponseWriter, r *http.Request) {
-	// TODO: Extract user from request's context
-}
-
-// TODO: Change function names. There is duplicate functions on different modules
 func (bc *BoxController) LevelUp(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+	// Error handling
+	wordId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid word id", http.StatusBadRequest)
+		return
+	}
 
+	if err := bc.BoxService.LevelUp(user.Id, wordId); err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, "llevel up !")
 }
 
 func (bc *BoxController) LevelDown(w http.ResponseWriter, r *http.Request) {
+	user := context.User(r.Context())
+	// Error handling
+	wordId, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "Invalid word id", http.StatusBadRequest)
+		return
+	}
 
+	if err := bc.BoxService.LevelDown(user.Id, wordId); err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprint(w, "llevel down !")
 }
