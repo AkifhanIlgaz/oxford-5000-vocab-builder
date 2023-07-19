@@ -15,7 +15,6 @@ type BoxController struct {
 	BoxService  *models.BoxService
 	WordService *models.WordService
 	// TODO: Add other services if necessary
-	// TODO: Add encoder field to service structs
 }
 
 // TODO: Delete this function
@@ -24,10 +23,7 @@ func (bc *BoxController) GetWordBox(w http.ResponseWriter, r *http.Request) {
 
 	words, _ := bc.BoxService.GetWordBox(user.Id)
 
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-
-	enc.Encode(words[:3])
+	bc.encode(w, words[:3])
 }
 
 // OK
@@ -61,12 +57,10 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 		wordInfos = append(wordInfos, wordInfo)
 	}
 
-	enc := json.NewEncoder(w)
-	enc.SetIndent("", "  ")
-
-	enc.Encode(wordInfos)
+	bc.encode(w, wordInfos)
 }
 
+// OK
 func (bc *BoxController) LevelUp(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	// Error handling
@@ -84,6 +78,7 @@ func (bc *BoxController) LevelUp(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "llevel up !")
 }
 
+// OK
 func (bc *BoxController) LevelDown(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	// Error handling
@@ -99,4 +94,11 @@ func (bc *BoxController) LevelDown(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, "llevel down !")
+}
+
+func (bc *BoxController) encode(w http.ResponseWriter, data any) {
+	enc := json.NewEncoder(w)
+	// TODO: Should I set indent ?
+	enc.SetIndent("", "  ")
+	enc.Encode(data)
 }
