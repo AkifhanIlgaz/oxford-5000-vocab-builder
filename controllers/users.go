@@ -4,16 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 )
 
 type UsersController struct {
-	UserService    *models.UserService
-	SessionService *models.SessionService
-	WordService    *models.WordService
-	BoxService     *models.BoxService
+	UserService          *models.UserService
+	SessionService       *models.SessionService
+	WordService          *models.WordService
+	BoxService           *models.BoxService
+	EmailService         *models.EmailService
+	PasswordResetService *models.PasswordResetService
 }
 
 func (uc UsersController) SignUp(w http.ResponseWriter, r *http.Request) {
@@ -98,6 +101,66 @@ func (uc UsersController) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 
 	fmt.Fprint(w, user)
+}
+
+func (uc UsersController) ForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+
+	data.Email = r.FormValue("email")
+	passwordReset, err := uc.PasswordResetService.Create(data.Email)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	vals := url.Values{
+		"token": {passwordReset.Token},
+	}
+	resetUrl := models.DefaultSender + "/reset-password?" + vals.Encode()
+
+	err = uc.EmailService.ForgotPassword(data.Email, resetUrl)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+}
+
+func (uc UsersController) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Token    string
+		Password string
+	}
+
+	data.Token = r.FormValue("token")
+	data.Password = r.FormValue("password")
+
+	user, err := uc.PasswordResetService.Consume(data.Token)
+	if err != nil {
+		fmt.Println(err)
+		// TODO: Handle different kind of errors
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	err = uc.UserService.UpdatePassword(user.Id, data.Password)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := uc.SessionService.Create(user.Id)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/signin", http.StatusFound)
+		return
+	}
+	setCookie(w, CookieSession, session.Token)
+	http.Redirect(w, r, "/users/me", http.StatusFound)
 }
 
 type UserMiddleware struct {

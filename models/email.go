@@ -30,12 +30,12 @@ type SMTPConfig struct {
 	Password string
 }
 
-func NewEmailService(config SMTPConfig) *EmailService {
+func NewEmailService(config SMTPConfig) EmailService {
 	service := EmailService{
 		dialer: mail.NewDialer(config.Host, config.Port, config.UserName, config.Password),
 	}
 
-	return &service
+	return service
 }
 
 func (service *EmailService) Send(email Email) error {

@@ -22,8 +22,7 @@ type PasswordReset struct {
 }
 
 type PasswordResetService struct {
-	DB            *sql.DB
-	BytesPerToken int
+	DB *sql.DB
 }
 
 // Create a password reset token for the given email

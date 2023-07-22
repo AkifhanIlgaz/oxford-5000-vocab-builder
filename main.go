@@ -137,14 +137,19 @@ func run(cfg config) error {
 
 	emailService := models.NewEmailService(cfg.SMTP)
 
-	
+	passwordResetService := models.PasswordResetService{
+		DB: postgres,
+	}
+
 	r := chi.NewRouter()
 
 	usersController := controllers.UsersController{
-		UserService:    &userService,
-		WordService:    &wordService,
-		BoxService:     &boxService,
-		SessionService: &sessionService,
+		UserService:          &userService,
+		WordService:          &wordService,
+		BoxService:           &boxService,
+		SessionService:       &sessionService,
+		EmailService:         &emailService,
+		PasswordResetService: &passwordResetService,
 	}
 
 	wordsController := controllers.WordsController{
@@ -165,6 +170,8 @@ func run(cfg config) error {
 	r.Post("/signup", usersController.SignUp)
 	r.Post("/signin", usersController.SignIn)
 	r.Post("/signout", usersController.SignOut)
+	r.Post("/forgot-password", usersController.ForgotPassword)
+	r.Post("/reset-password", usersController.ResetPassword)
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(userMiddleware.RequireUser)
 		r.Get("/", usersController.CurrentUser)
