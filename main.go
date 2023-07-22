@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
@@ -22,6 +23,7 @@ type config struct {
 	Postgres database.PostgresConfig
 	Mongo    database.MongoConfig
 	Bolt     database.BoltConfig // UserHomeDir + FileName
+	SMTP     models.SMTPConfig
 	Server   struct {
 		Address string
 	}
@@ -63,6 +65,14 @@ func loadEnvConfig() (config, error) {
 	}
 	cfg.Bolt.Path = filepath.Join(home, boltFileName)
 
+	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
+	cfg.SMTP.Port, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
+	if err != nil {
+		return cfg, err
+	}
+	cfg.SMTP.UserName = os.Getenv("SMTP_USERNAME")
+	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
+
 	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
 
 	return cfg, nil
@@ -78,6 +88,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 }
 
 func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, error) {
@@ -124,6 +135,9 @@ func run(cfg config) error {
 		DB: postgres,
 	}
 
+	emailService := models.NewEmailService(cfg.SMTP)
+
+	
 	r := chi.NewRouter()
 
 	usersController := controllers.UsersController{
