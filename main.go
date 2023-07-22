@@ -81,7 +81,6 @@ func main() {
 }
 
 func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, error) {
-	// Check your allowed IP address for mongo
 	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
 		return nil, nil, nil, err

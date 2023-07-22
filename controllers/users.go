@@ -106,7 +106,9 @@ type UserMiddleware struct {
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// read session and determine user
+		// TODO: Delete this line when go to production
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
 		token, err := readCookie(r, CookieSession)
 		if err != nil {
 			next.ServeHTTP(w, r)
@@ -121,6 +123,7 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 
 		ctx := context.WithUser(r.Context(), user)
 		r = r.WithContext(ctx)
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -133,7 +136,7 @@ func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
 			http.Error(w, "Please login", http.StatusForbidden)
 			return
 		}
-		
+
 		next.ServeHTTP(w, r)
 	})
 }
