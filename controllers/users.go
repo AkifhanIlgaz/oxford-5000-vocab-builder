@@ -44,7 +44,7 @@ func (uc UsersController) SignUp(w http.ResponseWriter, r *http.Request) {
 	// set cookie
 	setCookie(w, CookieSession, session.Token)
 
-	fmt.Fprintln(w, "User successfully created")
+	http.Redirect(w, r, "/profile", http.StatusOK)
 }
 
 func (uc UsersController) SignIn(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +73,7 @@ func (uc UsersController) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	setCookie(w, CookieSession, session.Token)
 
-	fmt.Fprint(w, "Logged in successfully")
+	http.Redirect(w, r, "/profile", http.StatusOK)
 }
 
 func (uc UsersController) SignOut(w http.ResponseWriter, r *http.Request) {
@@ -127,6 +127,8 @@ func (uc UsersController) ForgotPassword(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
+
+	http.Redirect(w, r, "/signin", http.StatusOK)
 }
 
 func (uc UsersController) ResetPassword(w http.ResponseWriter, r *http.Request) {
@@ -160,7 +162,7 @@ func (uc UsersController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	setCookie(w, CookieSession, session.Token)
-	http.Redirect(w, r, "/users/me", http.StatusFound)
+	http.Redirect(w, r, "/profile", http.StatusOK)
 }
 
 type UserMiddleware struct {
