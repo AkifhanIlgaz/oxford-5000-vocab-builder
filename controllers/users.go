@@ -97,7 +97,7 @@ func (uc UsersController) SignOut(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Logged out")
 }
 
-func (uc UsersController) CurrentUser(w http.ResponseWriter, r *http.Request) {
+func (uc UsersController) Profile(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 
 	fmt.Fprint(w, user)
@@ -119,7 +119,7 @@ func (uc UsersController) ForgotPassword(w http.ResponseWriter, r *http.Request)
 	vals := url.Values{
 		"token": {passwordReset.Token},
 	}
-	resetUrl := models.DefaultSender + "/reset-password?" + vals.Encode()
+	resetUrl := "localhost:8100" + "/reset-password?" + vals.Encode()
 
 	err = uc.EmailService.ForgotPassword(data.Email, resetUrl)
 	if err != nil {
@@ -186,7 +186,7 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 
 		ctx := context.WithUser(r.Context(), user)
 		r = r.WithContext(ctx)
-
+		fmt.Println("Current User: ", user)
 		next.ServeHTTP(w, r)
 	})
 }

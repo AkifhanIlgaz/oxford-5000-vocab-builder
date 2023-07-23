@@ -32,9 +32,8 @@ func (service *PasswordResetService) Create(email string) (*PasswordReset, error
 
 	var userId int
 	row := service.DB.QueryRow(`
-		SELECT FROM users
-		WHERE email = $1
-		RETURNING id;
+		SELECT id FROM users
+		WHERE email = $1;
 	`, email)
 	if err := row.Scan(&userId); err != nil {
 		return nil, fmt.Errorf("create password reset token: %w", err)
@@ -79,7 +78,7 @@ func (service *PasswordResetService) Consume(token string) (*User, error) {
 				users.email,
 				users.password_hash
 		FROM password_resets
-				JOIN users on users.id = password_reset.user_id
+				JOIN users on users.id = password_resets.user_id
 		WHERE password_resets.token_hash = $1;
 	`, tokenHash)
 

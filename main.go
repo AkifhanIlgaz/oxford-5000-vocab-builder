@@ -172,9 +172,9 @@ func run(cfg config) error {
 	r.Post("/signout", usersController.SignOut)
 	r.Post("/forgot-password", usersController.ForgotPassword)
 	r.Post("/reset-password", usersController.ResetPassword)
-	r.Route("/users/me", func(r chi.Router) {
+	r.Route("/profile", func(r chi.Router) {
 		r.Use(userMiddleware.RequireUser)
-		r.Get("/", usersController.CurrentUser)
+		r.Get("/", usersController.Profile)
 	})
 
 	r.Route("/box", func(r chi.Router) {
