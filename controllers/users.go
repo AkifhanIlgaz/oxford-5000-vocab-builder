@@ -19,6 +19,7 @@ type UsersController struct {
 	PasswordResetService *models.PasswordResetService
 }
 
+// OK
 func (uc UsersController) SignUp(w http.ResponseWriter, r *http.Request) {
 	// Parse form
 	email := r.FormValue("email")
@@ -44,9 +45,10 @@ func (uc UsersController) SignUp(w http.ResponseWriter, r *http.Request) {
 	// set cookie
 	setCookie(w, CookieSession, session.Token)
 
-	http.Redirect(w, r, "/profile", http.StatusOK)
+	// http.Redirect(w, r, "/profile", http.StatusFound)
 }
 
+// OK
 func (uc UsersController) SignIn(w http.ResponseWriter, r *http.Request) {
 	// Parse data from request
 	email := r.FormValue("email")
@@ -73,9 +75,10 @@ func (uc UsersController) SignIn(w http.ResponseWriter, r *http.Request) {
 
 	setCookie(w, CookieSession, session.Token)
 
-	http.Redirect(w, r, "/profile", http.StatusOK)
+	http.Redirect(w, r, "/profile", http.StatusFound)
 }
 
+// OK
 func (uc UsersController) SignOut(w http.ResponseWriter, r *http.Request) {
 	// Read session token from request
 	token, err := readCookie(r, CookieSession)
@@ -171,9 +174,6 @@ type UserMiddleware struct {
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Delete this line when go to production
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-
 		token, err := readCookie(r, CookieSession)
 		if err != nil {
 			next.ServeHTTP(w, r)
@@ -188,7 +188,7 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 
 		ctx := context.WithUser(r.Context(), user)
 		r = r.WithContext(ctx)
-		fmt.Println("Current User: ", user)
+
 		next.ServeHTTP(w, r)
 	})
 }

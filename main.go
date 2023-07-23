@@ -18,7 +18,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TODO: Add SMTP and CSRF config
 type config struct {
 	Postgres database.PostgresConfig
 	Mongo    database.MongoConfig
