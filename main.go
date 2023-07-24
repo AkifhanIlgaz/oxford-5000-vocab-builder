@@ -164,6 +164,7 @@ func run(cfg config) error {
 		SessionService: &sessionService,
 	}
 
+	// All endpoints are working correctly
 	r.Use(userMiddleware.SetUser)
 
 	r.Post("/signup", usersController.SignUp)
