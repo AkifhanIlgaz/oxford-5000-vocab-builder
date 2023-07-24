@@ -19,7 +19,7 @@ func (config PostgresConfig) String() string {
 }
 
 func OpenPostgres(config PostgresConfig) (*sql.DB, error) {
-	db, err := sql.Open("pgx", "host=localhost port=5432 user=baloo password=junglebook dbname=vocab sslmode=disable")
+	db, err := sql.Open("pgx", fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", config.Host, config.Port, config.User, config.Password, config.DBName, config.SSLMode))
 	if err != nil {
 		return nil, fmt.Errorf("open postgres: %w", err)
 	}
