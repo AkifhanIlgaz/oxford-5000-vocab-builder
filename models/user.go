@@ -1,11 +1,11 @@
 package models
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +23,7 @@ type User struct {
 }
 
 type UserService struct {
-	DB *sql.DB
+	DB *firebase.App
 }
 
 func (service *UserService) Create(email, password string) (*User, error) {
