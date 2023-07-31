@@ -1,13 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 
-	firebase "firebase.google.com/go/v4"
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
@@ -90,32 +90,36 @@ func main() {
 
 }
 
-func initServices(cfg config) (*mongo.Client, *bolt.DB, *firebase.App, error) {
+func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, error) {
 	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to mongo")
 
+	postgres, err := database.OpenPostgres(cfg.Postgres)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	fmt.Println("Connected to postgres")
+
 	bolt, err := database.OpenBolt(cfg.Bolt)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-
-	firebase, err := database.OpenFirebase()
 	fmt.Println("Connected to bolt")
 
-	return mongo, bolt, firebase, nil
+	return mongo, postgres, bolt, nil
 }
 
 func run(cfg config) error {
-	mongo, bolt, firebase, err := initServices(cfg)
+	mongo, postgres, bolt, err := initServices(cfg)
 	if err != nil {
 		return err
 	}
 
 	userService := models.UserService{
-		DB: firebase,
+		DB: postgres,
 	}
 
 	wordService := models.WordService{
@@ -127,7 +131,7 @@ func run(cfg config) error {
 	}
 
 	sessionService := models.SessionService{
-		DB: firebase,
+		DB: postgres,
 	}
 
 	emailService := models.NewEmailService(cfg.SMTP)

@@ -2,10 +2,10 @@ package models
 
 import (
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base64"
 	"fmt"
 
-	firebase "firebase.google.com/go/v4"
 	"github.com/AkifhanIlgaz/vocab-builder/rand"
 )
 
@@ -19,7 +19,7 @@ type Session struct {
 }
 
 type SessionService struct {
-	DB *firebase.App
+	DB *sql.DB
 }
 
 func (service *SessionService) Create(userId int) (*Session, error) {
