@@ -11,6 +11,7 @@ import (
 type WordInfo struct {
 	Id          int          `json:"id"`
 	Box         int          `json:"box"`
+	Source      string       `json:"source"`
 	Word        string       `json:"word"`
 	Header      Header       `json:"header"`
 	Definitions []Definition `json:"definitions"`
@@ -57,7 +58,7 @@ func (service *WordService) GetWord(id int) (*WordInfo, error) {
 }
 
 func (service *WordService) GetWordWithCollection(collection *mongo.Collection, id int) (*WordInfo, error) {
-	// TODO: Pass the collection as parameter 
+	// TODO: Pass the collection as parameter
 	panic("")
 }
 
