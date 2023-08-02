@@ -43,6 +43,7 @@ func loadEnvConfig() (config, error) {
 		DBName:   os.Getenv("POSTGRES_DBNAME"),
 		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
 	}
+	
 	if cfg.Postgres.Host == "" && cfg.Postgres.Port == "" {
 		return cfg, fmt.Errorf("no Postgres config provided")
 	}
