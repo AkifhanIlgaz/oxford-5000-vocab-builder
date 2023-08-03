@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/AkifhanIlgaz/vocab-builder/parser"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
@@ -21,6 +22,40 @@ With concurrency 2 minutes
 
 	When I tried concurrency, I get TLS handshake timeout error
 */
+func EdgeCaseSenseSingle(collection *mongo.Collection) {
+
+	words := []models.WordInfo{}
+
+	cur, _ := collection.Find(context.TODO(), bson.D{
+		{
+			"definitions", nil,
+		},
+	})
+
+	cur.All(context.TODO(), &words)
+
+	for _, word := range words {
+		retry(word.Id, word.Source, collection)
+	}
+	fmt.Println(words)
+}
+
+func DeleteNullDefinitions(collection *mongo.Collection) {
+
+	res, err := collection.DeleteMany(context.TODO(), bson.D{
+		{
+			"definitions", nil,
+		},
+	})
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	fmt.Println(res.DeletedCount)
+}
+
 func InsertToMongo(urlsFile string, wordsCollection *mongo.Collection) {
 	file, err := os.Open(urlsFile)
 	if err != nil {
