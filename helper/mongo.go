@@ -38,13 +38,16 @@ func InsertToMongo(urlsFile string, wordsCollection *mongo.Collection) {
 	start := time.Now()
 
 	for id, url := range urls {
+
 		wordInfo, err := parser.ParseWord(url.Url)
 		if err != nil {
 			retry(id, url.Url, wordsCollection)
 		}
 		wordInfo.Id = id
-		fmt.Println("Inserting", url.Url)
+		wordInfo.Source = url.Url
+		fmt.Println("Inserting", url)
 		wordsCollection.InsertOne(context.TODO(), wordInfo)
+
 	}
 
 	fmt.Println("5947 words is parsed and inserted to mongo in", time.Since(start))
