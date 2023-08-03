@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
+	"github.com/AkifhanIlgaz/vocab-builder/parser"
 	"github.com/boltdb/bolt"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -43,7 +45,7 @@ func loadEnvConfig() (config, error) {
 		DBName:   os.Getenv("POSTGRES_DBNAME"),
 		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
 	}
-	
+
 	if cfg.Postgres.Host == "" && cfg.Postgres.Port == "" {
 		return cfg, fmt.Errorf("no Postgres config provided")
 	}
@@ -189,6 +191,14 @@ func run(cfg config) error {
 	})
 
 	r.Get("/words/{id}", wordsController.WordWithId)
+	r.Get("/words/parse/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
+		word, _ := wordsController.WordService.GetWord(id)
+		newParsed, _ := parser.ParseWord(word.Source)
+
+		enc := json.NewEncoder(w)
+		enc.Encode(newParsed)
+	})
 
 	fmt.Println("Starting server on", cfg.Server.Address)
 	return http.ListenAndServe(cfg.Server.Address, r)

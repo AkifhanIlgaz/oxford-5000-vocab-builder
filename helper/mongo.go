@@ -5,11 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/AkifhanIlgaz/vocab-builder/parser"
+	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 /*
@@ -76,4 +79,106 @@ func RenameBoxField(wordsCollection *mongo.Collection) {
 			}},
 		},
 	})
+}
+
+func WithConcurrency() {
+	godotenv.Load()
+
+	// Use the SetServerAPIOptions() method to set the Stable API version to 1
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(os.Getenv("MONGODB_URI")).SetServerAPIOptions(serverAPI)
+	// Create a new client and connect to the server
+	client, err := mongo.Connect(context.TODO(), opts)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+	// Send a ping to confirm a successful connection
+	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Err(); err != nil {
+		panic(err)
+	}
+	fmt.Println("Pinged your deployment. You successfully connected to MongoDB!")
+
+	file, err := os.Open("word_database/urls.json")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	var urls []struct {
+		id  int
+		Url string `json:"url"`
+	}
+
+	wordCollection := client.Database("VocabBuilder").Collection("Words")
+
+	dec := json.NewDecoder(file)
+	dec.Decode(&urls)
+
+	start := time.Now()
+
+	var wg sync.WaitGroup
+
+	total := len(urls)
+	ok := 0
+	false := 0
+
+	errorss := []struct {
+		id  int
+		Url string `json:"url"`
+	}{}
+
+	for i, url := range urls {
+		wg.Add(1)
+		go func(i int, url struct {
+			id  int
+			Url string `json:"url"`
+		}) {
+			defer wg.Done()
+			word, err := parser.ParseWord(url.Url)
+			word.Id = i
+			word.Source = url.Url
+			if err != nil {
+				fmt.Println("error", url.Url)
+				url.id = i
+				errorss = append(errorss, url)
+			}
+			_, err = wordCollection.InsertOne(context.TODO(), word)
+			if err != nil {
+				fmt.Println("error", url.Url)
+				url.id = i
+				errorss = append(errorss, url)
+			}
+			fmt.Println(url.Url)
+			ok++
+		}(i, url)
+
+	}
+
+	wg.Wait()
+
+	for _, url := range errorss {
+
+		word, err := parser.ParseWord(url.Url)
+		word.Id = url.id
+		if err != nil {
+			fmt.Println(url.Url)
+		}
+		_, err = wordCollection.InsertOne(context.TODO(), word)
+
+		if err != nil {
+			fmt.Println(url.Url)
+		}
+		fmt.Println(url.Url)
+		ok++
+	}
+
+	fmt.Println("total", total)
+	fmt.Println("ok", ok)
+	fmt.Println("false", false)
+	fmt.Println(time.Since(start))
 }

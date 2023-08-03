@@ -72,7 +72,8 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInf
 		})
 
 		s.Find("ul.examples > li span.x").Each(func(i int, s *goquery.Selection) {
-			definition.Examples = append(definition.Examples, s.Text())
+			html, _ := s.Html()
+			definition.Examples = append(definition.Examples, html)
 		})
 
 		wordInfo.Definitions = append(wordInfo.Definitions, definition)
