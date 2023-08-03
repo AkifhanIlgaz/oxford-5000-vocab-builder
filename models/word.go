@@ -43,7 +43,7 @@ type WordService struct {
 
 func (service *WordService) GetWord(id int) (*WordInfo, error) {
 	var wordInfo WordInfo
-	wordCollection := service.Client.Database("Vocab-Builder").Collection("Words")
+	wordCollection := service.Client.Database("VocabBuilder").Collection("Words")
 
 	filter := bson.D{{Key: "id", Value: id}}
 	err := wordCollection.FindOne(context.TODO(), filter).Decode(&wordInfo)
