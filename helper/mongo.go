@@ -22,6 +22,35 @@ With concurrency 2 minutes
 
 	When I tried concurrency, I get TLS handshake timeout error
 */
+
+func UpdatePhonetics(collection *mongo.Collection) {
+	words := []models.WordInfo{}
+
+	cur, err := collection.Find(context.TODO(), bson.M{
+		"header.partofspeech": "verb",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = cur.All(context.TODO(), &words)
+	if err != nil {
+		panic(err)
+	}
+	for _, word := range words {
+		parsedWord, _ := parser.ParseWord(word.Source)
+		fmt.Println(parsedWord.Word)
+		collection.UpdateOne(context.TODO(), bson.M{
+			"source": word.Source,
+		}, bson.D{
+			{"$set", bson.D{
+				{"header.audio", parsedWord.Header.Audio},
+			}},
+		})
+
+	}
+}
+
 func EdgeCaseSenseSingle(collection *mongo.Collection) {
 
 	words := []models.WordInfo{}

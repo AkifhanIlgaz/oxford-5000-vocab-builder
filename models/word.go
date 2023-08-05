@@ -61,8 +61,3 @@ func (service *WordService) GetWordWithCollection(collection *mongo.Collection, 
 	// TODO: Pass the collection as parameter
 	panic("")
 }
-
-func (service *WordService) GetWords(ids []int) ([]*WordInfo, error) {
-	// TODO: Get multiple words
-	panic("Get multiple words")
-}

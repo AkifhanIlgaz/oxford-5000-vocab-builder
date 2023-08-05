@@ -51,7 +51,8 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 	})
 
 	// Audio
-	mainContainer.Find(`span.phonetics div div`).Each(func(i int, s *goquery.Selection) {
+
+	mainContainer.Find(`span.phonetics div > div`).Slice(0, 2).Each(func(i int, s *goquery.Selection) {
 		audioUrl, _ := s.Attr("data-src-mp3")
 
 		// We don't need to check `pron-us` since there is only two possibilities
@@ -60,6 +61,7 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 		} else {
 			wordInfo.Header.Audio.US = audioUrl
 		}
+
 	})
 
 }
@@ -77,12 +79,10 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInf
 			html, _ := s.Html()
 			definition.Examples = append(definition.Examples, html)
 		})
-		fmt.Println(definition)
 		wordInfo.Definitions = append(wordInfo.Definitions, definition)
 
 	})
 
-	fmt.Println(wordInfo.Definitions)
 }
 
 func parseIdioms(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {

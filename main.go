@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
@@ -198,6 +200,21 @@ func run(cfg config) error {
 
 		enc := json.NewEncoder(w)
 		enc.Encode(newParsed)
+	})
+	// TODO: Get 10 random words
+	r.Get("/words/random", func(w http.ResponseWriter, r *http.Request) {
+		var words []*models.WordInfo
+		source := rand.NewSource(time.Now().Unix())
+		random := rand.New(source)
+
+		for i := 0; i < 10; i++ {
+			id := random.Intn(5948)
+			word, _ := wordsController.WordService.GetWord(id)
+			words = append(words, word)
+		}
+
+		enc := json.NewEncoder(w)
+		enc.Encode(words)
 	})
 
 	fmt.Println("Starting server on", cfg.Server.Address)
