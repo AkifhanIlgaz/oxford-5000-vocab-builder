@@ -174,8 +174,7 @@ type UserMiddleware struct {
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		token, err := readCookie(r, CookieSession)
+		token, err := readCookie(r, TokenSession)
 		if err != nil {
 			next.ServeHTTP(w, r)
 			return

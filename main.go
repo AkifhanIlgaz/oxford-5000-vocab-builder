@@ -215,6 +215,7 @@ func run(cfg config) error {
 
 		enc := json.NewEncoder(w)
 		enc.Encode(words)
+
 	})
 
 	fmt.Println("Starting server on", cfg.Server.Address)
