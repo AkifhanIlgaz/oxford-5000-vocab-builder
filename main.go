@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	firebase "firebase.google.com/go/v4"
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
@@ -26,6 +27,7 @@ type config struct {
 	Postgres database.PostgresConfig
 	Mongo    database.MongoConfig
 	Bolt     database.BoltConfig // UserHomeDir + FileName
+	Firebase database.FirebaseConfig
 	SMTP     models.SMTPConfig
 	Server   struct {
 		Address string
@@ -69,6 +71,8 @@ func loadEnvConfig() (config, error) {
 	}
 	cfg.Bolt.Path = filepath.Join(home, boltFileName)
 
+	cfg.Firebase.Path = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
+
 	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
 	cfg.SMTP.Port, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
 	if err != nil {
@@ -95,33 +99,48 @@ func main() {
 
 }
 
-func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, error) {
+func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, *firebase.App, error) {
 	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	fmt.Println("Connected to mongo")
 
 	postgres, err := database.OpenPostgres(cfg.Postgres)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	fmt.Println("Connected to postgres")
 
 	bolt, err := database.OpenBolt(cfg.Bolt)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 	fmt.Println("Connected to bolt")
 
-	return mongo, postgres, bolt, nil
+	firebase, err := database.OpenFirebase(cfg.Firebase)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return mongo, postgres, bolt, firebase, nil
 }
 
 func run(cfg config) error {
-	mongo, postgres, bolt, err := initServices(cfg)
+	mongo, postgres, bolt, firebaseApp, err := initServices(cfg)
 	if err != nil {
 		return err
 	}
+
+	// TODO: Delete this struct
+	type FirebaseService struct {
+		App *firebase.App
+	}
+
+	firebaseService := FirebaseService{
+		App: firebaseApp,
+	}
+	fmt.Println(firebaseService)
 
 	userService := models.UserService{
 		DB: postgres,
@@ -186,6 +205,7 @@ func run(cfg config) error {
 		r.Use(userMiddleware.RequireUser)
 		// TODO: Delete get wordbox endpoint
 		r.Get("/", boxController.GetWordBox)
+		// TODO: Create new wordbox when user signs up
 		r.Post("/new", boxController.NewWordBox)
 		r.Get("/today", boxController.GetTodaysWords)
 		r.Post("/levelup/{id}", boxController.LevelUp)
