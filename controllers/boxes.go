@@ -21,7 +21,7 @@ type BoxController struct {
 func (bc *BoxController) GetWordBox(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 
-	words, _ := bc.BoxService.GetWordBox(user.Id)
+	words, _ := bc.BoxService.GetWordBox(user.Email)
 
 	bc.encode(w, words[:3])
 }
@@ -30,7 +30,7 @@ func (bc *BoxController) GetWordBox(w http.ResponseWriter, r *http.Request) {
 func (bc *BoxController) NewWordBox(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 
-	err := bc.BoxService.CreateWordBox(user.Id)
+	err := bc.BoxService.CreateWordBox(user.Email)
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
@@ -43,7 +43,8 @@ func (bc *BoxController) NewWordBox(w http.ResponseWriter, r *http.Request) {
 // OK
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
-	words, err := bc.BoxService.GetTodaysWords(user.Id)
+	// TODO:
+	words, err := bc.BoxService.GetTodaysWords(user.Email)
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -70,7 +71,7 @@ func (bc *BoxController) LevelUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := bc.BoxService.LevelUp(user.Id, wordId); err != nil {
+	if err := bc.BoxService.LevelUp(user.Email, wordId); err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -88,7 +89,7 @@ func (bc *BoxController) LevelDown(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := bc.BoxService.LevelDown(user.Id, wordId); err != nil {
+	if err := bc.BoxService.LevelDown(user.Email, wordId); err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}

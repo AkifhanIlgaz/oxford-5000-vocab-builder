@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	firebase "firebase.google.com/go/v4"
+	ctx "github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
@@ -132,15 +134,14 @@ func run(cfg config) error {
 		return err
 	}
 
-	// TODO: Delete this struct
-	type FirebaseService struct {
-		App *firebase.App
+	auth, err := firebaseApp.Auth(context.TODO())
+	if err != nil {
+		return err
 	}
 
-	firebaseService := FirebaseService{
-		App: firebaseApp,
+	authService := models.AuthService{
+		Auth: auth,
 	}
-	fmt.Println(firebaseService)
 
 	userService := models.UserService{
 		DB: postgres,
@@ -185,11 +186,11 @@ func run(cfg config) error {
 	}
 
 	userMiddleware := controllers.UserMiddleware{
-		SessionService: &sessionService,
+		AuthService: &authService,
 	}
 
 	// All endpoints are working correctly
-	// r.Use(userMiddleware.SetUser)
+	r.Use(userMiddleware.SetUser)
 
 	r.Post("/signup", usersController.SignUp)
 	r.Post("/signin", usersController.SignIn)
@@ -226,6 +227,7 @@ func run(cfg config) error {
 		var words []*models.WordInfo
 		source := rand.NewSource(time.Now().Unix())
 		random := rand.New(source)
+
 
 		for i := 0; i < 10; i++ {
 			id := random.Intn(5948)

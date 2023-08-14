@@ -1,12 +1,13 @@
 package controllers
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 
-	"github.com/AkifhanIlgaz/vocab-builder/context"
+	ctx "github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 )
 
@@ -101,7 +102,7 @@ func (uc UsersController) SignOut(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc UsersController) Profile(w http.ResponseWriter, r *http.Request) {
-	user := context.User(r.Context())
+	user := ctx.User(r.Context())
 
 	fmt.Fprint(w, user)
 }
@@ -169,25 +170,30 @@ func (uc UsersController) ResetPassword(w http.ResponseWriter, r *http.Request) 
 }
 
 type UserMiddleware struct {
-	SessionService *models.SessionService
+	AuthService *models.AuthService
+}
+
+func readToken(r *http.Request) string {
+	return r.URL.Query().Get("token")
 }
 
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token, err := readCookie(r, TokenSession)
-		if err != nil {
+		token := readToken(r)
+
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		user, err := umw.SessionService.User(token)
+		authToken, err := umw.AuthService.Auth.VerifyIDToken(context.TODO(), token)
 		if err != nil {
+			fmt.Println(err)
 			next.ServeHTTP(w, r)
 			return
 		}
-
-		ctx := context.WithUser(r.Context(), user)
-		r = r.WithContext(ctx)
+		newContext := ctx.WithUid(r.Context(), authToken.UID)
+		r = r.WithContext(newContext)
 
 		next.ServeHTTP(w, r)
 	})
@@ -195,7 +201,7 @@ func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 
 func (umw UserMiddleware) RequireUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := context.User(r.Context())
+		user := ctx.User(r.Context())
 		if user == nil {
 			// TODO: Redirect
 			http.Error(w, "Please login", http.StatusForbidden)
