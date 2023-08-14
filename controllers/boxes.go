@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -20,6 +21,13 @@ type BoxController struct {
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
 	uid := context.Uid(r.Context())
 	words, err := bc.BoxService.GetTodaysWords(uid)
+	if len(words) == 0 {
+		if err := bc.BoxService.CreateWordBox(uid); err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+		words, err = bc.BoxService.GetTodaysWords(uid)
+	}
 
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -28,7 +36,7 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 
 	var wordInfos []*models.WordInfo
 
-	for i := 0; i < 3; i++ {
+	for _, i := range rand.Perm(len(words))[:10] {
 		wordInfo, _ := bc.WordService.GetWord(words[i].Id)
 		wordInfos = append(wordInfos, wordInfo)
 	}

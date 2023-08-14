@@ -130,7 +130,6 @@ func run(cfg config) error {
 
 	r.Route("/box", func(r chi.Router) {
 		r.Use(userMiddleware.RequireUser)
-		// TODO: Create new wordbox when user signs up
 		r.Get("/today", boxController.GetTodaysWords)
 		r.Post("/levelup/{id}", boxController.LevelUp)
 		r.Post("/leveldown/{id}", boxController.LevelDown)
