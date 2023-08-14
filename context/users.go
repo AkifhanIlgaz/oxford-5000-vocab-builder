@@ -9,6 +9,7 @@ import (
 type key string
 
 const userKey key = "user"
+const uidKey key = "uid"
 
 func WithUser(ctx context.Context, user *models.User) context.Context {
 	return context.WithValue(ctx, userKey, user)
@@ -22,4 +23,15 @@ func User(ctx context.Context) *models.User {
 	}
 
 	return nil
+}
+
+func WithUid(ctx context.Context, uid string) context.Context {
+	return context.WithValue(ctx, uidKey, uid)
+}
+
+func Uid(ctx context.Context) string {
+	if uid, ok := ctx.Value(uidKey).(string); ok {
+		return uid
+	}
+	return ""
 }

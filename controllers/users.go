@@ -172,7 +172,6 @@ type UserMiddleware struct {
 	SessionService *models.SessionService
 }
 
-// TODO: Use Firebase ID Token to identify user
 func (umw UserMiddleware) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := readCookie(r, TokenSession)

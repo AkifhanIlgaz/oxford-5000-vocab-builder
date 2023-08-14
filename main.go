@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -141,6 +140,7 @@ func run(cfg config) error {
 	firebaseService := FirebaseService{
 		App: firebaseApp,
 	}
+	fmt.Println(firebaseService)
 
 	userService := models.UserService{
 		DB: postgres,
@@ -187,20 +187,6 @@ func run(cfg config) error {
 	userMiddleware := controllers.UserMiddleware{
 		SessionService: &sessionService,
 	}
-
-	r.Get("/idtoken", func(w http.ResponseWriter, r *http.Request) {
-		auth, err := firebaseService.App.Auth(context.TODO())
-		if err != nil {
-			panic(err)
-		}
-
-		token, err := auth.VerifyIDToken(context.TODO(), r.URL.Query().Get("token"))
-		if err != nil {
-			panic(err)
-		}
-		fmt.Println(token.UID)
-
-	})
 
 	// All endpoints are working correctly
 	// r.Use(userMiddleware.SetUser)

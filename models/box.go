@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -99,7 +98,7 @@ type BoxService struct {
 	DB *bolt.DB
 }
 
-func (service *BoxService) CreateWordBox(userId int) error {
+func (service *BoxService) CreateWordBox(userId string) error {
 	err := service.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(boxBucket))
 		var wordBox WordBox
@@ -110,7 +109,7 @@ func (service *BoxService) CreateWordBox(userId int) error {
 			})
 		}
 
-		return b.Put(itob(userId), serializeWordBox(wordBox))
+		return b.Put([]byte(userId), serializeWordBox(wordBox))
 	})
 
 	if err != nil {
@@ -120,12 +119,12 @@ func (service *BoxService) CreateWordBox(userId int) error {
 	return nil
 }
 
-func (service *BoxService) GetWordBox(userId int) (WordBox, error) {
+func (service *BoxService) GetWordBox(userId string) (WordBox, error) {
 	var wordBox WordBox
 
 	err := service.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(boxBucket))
-		wordBox = deserializeWordBox(b.Get(itob(userId)))
+		wordBox = deserializeWordBox(b.Get([]byte(userId)))
 		return nil
 	})
 
@@ -136,7 +135,7 @@ func (service *BoxService) GetWordBox(userId int) (WordBox, error) {
 	return wordBox, nil
 }
 
-func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
+func (service *BoxService) GetTodaysWords(userId string) ([]Word, error) {
 	var todaysWords []Word
 
 	wordBox, err := service.GetWordBox(userId)
@@ -157,10 +156,10 @@ func (service *BoxService) GetTodaysWords(userId int) ([]Word, error) {
 	return todaysWords, nil
 }
 
-func (service *BoxService) updateWordBox(userId int, wordBox WordBox) error {
+func (service *BoxService) updateWordBox(userId string, wordBox WordBox) error {
 	err := service.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(boxBucket))
-		return b.Put(itob(userId), serializeWordBox(wordBox))
+		return b.Put([]byte(userId), serializeWordBox(wordBox))
 	})
 
 	if err != nil {
@@ -170,7 +169,7 @@ func (service *BoxService) updateWordBox(userId int, wordBox WordBox) error {
 	return nil
 }
 
-func (service *BoxService) LevelUp(userId int, wordId int) error {
+func (service *BoxService) LevelUp(userId string, wordId int) error {
 	wordBox, err := service.GetWordBox(userId)
 	if err != nil {
 		return fmt.Errorf("level up: %w", err)
@@ -181,7 +180,7 @@ func (service *BoxService) LevelUp(userId int, wordId int) error {
 	return service.updateWordBox(userId, wordBox)
 }
 
-func (service *BoxService) LevelDown(userId int, wordId int) error {
+func (service *BoxService) LevelDown(userId string, wordId int) error {
 	wordBox, err := service.GetWordBox(userId)
 	if err != nil {
 		return fmt.Errorf("level up: %w", err)
@@ -190,16 +189,6 @@ func (service *BoxService) LevelDown(userId int, wordId int) error {
 	w := &wordBox[wordId]
 	w.levelDown()
 	return service.updateWordBox(userId, wordBox)
-}
-
-func itob(v int) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, uint64(v))
-	return b
-}
-
-func btoi(b []byte) int {
-	return int(binary.BigEndian.Uint64(b))
 }
 
 func serializeWordBox(wordBox WordBox) []byte {
