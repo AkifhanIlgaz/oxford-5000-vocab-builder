@@ -2,22 +2,15 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 
 	firebase "firebase.google.com/go/v4"
-	ctx "github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/controllers"
 	"github.com/AkifhanIlgaz/vocab-builder/database"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
-	"github.com/AkifhanIlgaz/vocab-builder/parser"
 	"github.com/boltdb/bolt"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -26,11 +19,9 @@ import (
 )
 
 type config struct {
-	Postgres database.PostgresConfig
 	Mongo    database.MongoConfig
 	Bolt     database.BoltConfig // UserHomeDir + FileName
 	Firebase database.FirebaseConfig
-	SMTP     models.SMTPConfig
 	Server   struct {
 		Address string
 	}
@@ -41,19 +32,6 @@ func loadEnvConfig() (config, error) {
 	err := godotenv.Load()
 	if err != nil {
 		return cfg, fmt.Errorf("load env: %w", err)
-	}
-
-	cfg.Postgres = database.PostgresConfig{
-		Host:     os.Getenv("POSTGRES_HOST"),
-		Port:     os.Getenv("POSTGRES_PORT"),
-		User:     os.Getenv("POSTGRES_USER"),
-		Password: os.Getenv("POSTGRES_PASSWORD"),
-		DBName:   os.Getenv("POSTGRES_DBNAME"),
-		SSLMode:  os.Getenv("POSTGRES_SSLMODE"),
-	}
-
-	if cfg.Postgres.Host == "" && cfg.Postgres.Port == "" {
-		return cfg, fmt.Errorf("no Postgres config provided")
 	}
 
 	cfg.Mongo = database.MongoConfig{
@@ -75,14 +53,6 @@ func loadEnvConfig() (config, error) {
 
 	cfg.Firebase.Path = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
-	cfg.SMTP.Host = os.Getenv("SMTP_HOST")
-	cfg.SMTP.Port, err = strconv.Atoi(os.Getenv("SMTP_PORT"))
-	if err != nil {
-		return cfg, err
-	}
-	cfg.SMTP.UserName = os.Getenv("SMTP_USERNAME")
-	cfg.SMTP.Password = os.Getenv("SMTP_PASSWORD")
-
 	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
 
 	return cfg, nil
@@ -101,50 +71,40 @@ func main() {
 
 }
 
-func initServices(cfg config) (*mongo.Client, *sql.DB, *bolt.DB, *firebase.App, error) {
+func initServices(cfg config) (*mongo.Client, *bolt.DB, *firebase.App, error) {
 	mongo, err := database.OpenMongo(cfg.Mongo)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to mongo")
 
-	postgres, err := database.OpenPostgres(cfg.Postgres)
-	if err != nil {
-		return nil, nil, nil, nil, err
-	}
-	fmt.Println("Connected to postgres")
-
 	bolt, err := database.OpenBolt(cfg.Bolt)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 	fmt.Println("Connected to bolt")
 
-	firebase, err := database.OpenFirebase(cfg.Firebase)
+	app, err := database.OpenFirebase(cfg.Firebase)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	return mongo, postgres, bolt, firebase, nil
+	return mongo, bolt, app, nil
 }
 
 func run(cfg config) error {
-	mongo, postgres, bolt, firebaseApp, err := initServices(cfg)
+	mongo, bolt, app, err := initServices(cfg)
 	if err != nil {
 		return err
 	}
 
-	auth, err := firebaseApp.Auth(context.TODO())
+	auth, err := app.Auth(context.TODO())
 	if err != nil {
 		return err
 	}
 
 	authService := models.AuthService{
 		Auth: auth,
-	}
-
-	userService := models.UserService{
-		DB: postgres,
 	}
 
 	wordService := models.WordService{
@@ -155,30 +115,7 @@ func run(cfg config) error {
 		DB: bolt,
 	}
 
-	sessionService := models.SessionService{
-		DB: postgres,
-	}
-
-	emailService := models.NewEmailService(cfg.SMTP)
-
-	passwordResetService := models.PasswordResetService{
-		DB: postgres,
-	}
-
 	r := chi.NewRouter()
-
-	usersController := controllers.UsersController{
-		UserService:          &userService,
-		WordService:          &wordService,
-		BoxService:           &boxService,
-		SessionService:       &sessionService,
-		EmailService:         &emailService,
-		PasswordResetService: &passwordResetService,
-	}
-
-	wordsController := controllers.WordsController{
-		WordService: &wordService,
-	}
 
 	boxController := controllers.BoxController{
 		BoxService:  &boxService,
@@ -189,55 +126,14 @@ func run(cfg config) error {
 		AuthService: &authService,
 	}
 
-	// All endpoints are working correctly
 	r.Use(userMiddleware.SetUser)
-
-	r.Post("/signup", usersController.SignUp)
-	r.Post("/signin", usersController.SignIn)
-	r.Post("/signout", usersController.SignOut)
-	r.Post("/forgot-password", usersController.ForgotPassword)
-	r.Post("/reset-password", usersController.ResetPassword)
-	r.Route("/profile", func(r chi.Router) {
-		r.Use(userMiddleware.RequireUser)
-		r.Get("/", usersController.Profile)
-	})
 
 	r.Route("/box", func(r chi.Router) {
 		r.Use(userMiddleware.RequireUser)
-		// TODO: Delete get wordbox endpoint
-		r.Get("/", boxController.GetWordBox)
 		// TODO: Create new wordbox when user signs up
-		r.Post("/new", boxController.NewWordBox)
 		r.Get("/today", boxController.GetTodaysWords)
 		r.Post("/levelup/{id}", boxController.LevelUp)
 		r.Post("/leveldown/{id}", boxController.LevelDown)
-	})
-
-	r.Get("/words/{id}", wordsController.WordWithId)
-	r.Get("/words/parse/{id}", func(w http.ResponseWriter, r *http.Request) {
-		id, _ := strconv.Atoi(chi.URLParam(r, "id"))
-		word, _ := wordsController.WordService.GetWord(id)
-		newParsed, _ := parser.ParseWord(word.Source)
-
-		enc := json.NewEncoder(w)
-		enc.Encode(newParsed)
-	})
-	// TODO: Get 10 random words
-	r.Get("/words/random", func(w http.ResponseWriter, r *http.Request) {
-		var words []*models.WordInfo
-		source := rand.NewSource(time.Now().Unix())
-		random := rand.New(source)
-
-
-		for i := 0; i < 10; i++ {
-			id := random.Intn(5948)
-			word, _ := wordsController.WordService.GetWord(id)
-			words = append(words, word)
-		}
-
-		enc := json.NewEncoder(w)
-		enc.Encode(words)
-
 	})
 
 	fmt.Println("Starting server on", cfg.Server.Address)

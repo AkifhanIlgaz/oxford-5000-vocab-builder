@@ -124,6 +124,7 @@ func (service *BoxService) GetWordBox(userId string) (WordBox, error) {
 
 	err := service.DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(boxBucket))
+
 		wordBox = deserializeWordBox(b.Get([]byte(userId)))
 		return nil
 	})
