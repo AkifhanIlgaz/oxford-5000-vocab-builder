@@ -7,6 +7,7 @@ require (
 	github.com/boltdb/bolt v1.3.1
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/jackc/pgx/v4 v4.18.1
+	google.golang.org/api v0.114.0
 )
 
 require (
@@ -36,23 +37,18 @@ require (
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/api v0.114.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/appengine/v2 v2.0.2 // indirect
 	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
 	google.golang.org/grpc v1.53.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
-	gopkg.in/mail.v2 v2.3.1 // indirect
 )
 
 require (
 	firebase.google.com/go/v4 v4.12.0
 	github.com/andybalholm/cascadia v1.3.1 // indirect
-	github.com/go-mail/mail/v2 v2.3.0
 	github.com/golang/snappy v0.0.1 // indirect
-	github.com/jackc/pgconn v1.14.0
-	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+	github.com/jackc/pgconn v1.14.0 // indirect
 	github.com/joho/godotenv v1.5.1
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
@@ -61,7 +57,7 @@ require (
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.mongodb.org/mongo-driver v1.12.0
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
