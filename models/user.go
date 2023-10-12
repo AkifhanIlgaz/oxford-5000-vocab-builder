@@ -58,8 +58,7 @@ func (service *UserService) Create(email, password string) (*User, error) {
 		CreatedAt:    time.Now(),
 	}
 
-	res, err := service.Collection.InsertOne(context.TODO(), user)
-	fmt.Println("id ", res.InsertedID)
+	_, err = service.Collection.InsertOne(context.TODO(), user)
 
 	if err != nil {
 		return nil, errors.MongoError(fmt.Errorf("create user: %w", err))
