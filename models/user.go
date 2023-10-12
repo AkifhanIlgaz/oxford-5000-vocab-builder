@@ -8,9 +8,9 @@ import (
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/AkifhanIlgaz/vocab-builder/errors"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,8 +23,18 @@ type UserService struct {
 }
 
 func NewUserService(client *mongo.Client) UserService {
+	collection := client.Database(Database).Collection(UsersCollection)
+
+	indexModel := mongo.IndexModel{
+		Keys:    map[string]int{"email": 1},
+		Options: options.Index().SetUnique(true),
+	}
+
+	// TODO: Check error
+	collection.Indexes().CreateOne(context.TODO(), indexModel)
+
 	return UserService{
-		Collection: client.Database(Database).Collection(UsersCollection),
+		Collection: collection,
 	}
 }
 
@@ -36,15 +46,6 @@ type User struct {
 }
 
 func (service *UserService) Create(email, password string) (*User, error) {
-	// Check if user exists
-	isUserExist, err := service.CheckIfUserExistsByEmail(email)
-	if err != nil {
-		return nil, fmt.Errorf("create user: %w", err)
-	}
-	if isUserExist {
-		return nil, fmt.Errorf("create user: %w", errors.ErrEmailTaken)
-	}
-
 	// Hash the password
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -58,22 +59,14 @@ func (service *UserService) Create(email, password string) (*User, error) {
 		CreatedAt:    time.Now(),
 	}
 
+	// Insert into DB
 	_, err = service.Collection.InsertOne(context.TODO(), user)
-
 	if err != nil {
-		return nil, errors.MongoError(fmt.Errorf("create user: %w", err))
+		if mongo.IsDuplicateKeyError(err) {
+			return nil, errors.ErrEmailTaken
+		}
+		return nil, err
 	}
 
 	return &user, nil
-}
-
-func (service *UserService) CheckIfUserExistsByEmail(email string) (bool, error) {
-	count, err := service.Collection.CountDocuments(context.TODO(), bson.M{
-		"email": email,
-	})
-	if err != nil {
-		return false, errors.MongoError(fmt.Errorf("check user by email: %w", err))
-	}
-
-	return count > 0, nil
 }
