@@ -9,6 +9,8 @@ func Routes(controllers *controllers) *chi.Mux {
 
 	r.Use(controllers.UserMiddleware.SetUser)
 
+	r.Post("/auth/signup", controllers.UsersController.Signup)
+
 	r.Route("/box", func(r chi.Router) {
 		r.Use(controllers.UserMiddleware.RequireUser)
 		r.Get("/today", controllers.BoxController.GetTodaysWords)

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -12,6 +13,23 @@ import (
 type UsersController struct {
 	WordService *models.WordService
 	BoxService  *models.BoxService
+	UserService *models.UserService
+}
+
+func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+
+	user, err := controller.UserService.Create(email, password)
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+	}
+
+	err = json.NewEncoder(w).Encode((user))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 type UserMiddleware struct {

@@ -11,6 +11,7 @@ type services struct {
 	AuthService *models.AuthService
 	WordService *models.WordService
 	BoxService  *models.BoxService
+	UserService *models.UserService
 }
 
 func Services(databases *databases) (*services, error) {
@@ -27,6 +28,8 @@ func Services(databases *databases) (*services, error) {
 		Client: databases.Mongo,
 	}
 
+	userService := models.NewUserService(databases.Mongo)
+
 	boxService := models.BoxService{
 		DB: databases.Bolt,
 	}
@@ -35,5 +38,6 @@ func Services(databases *databases) (*services, error) {
 		AuthService: &authService,
 		WordService: &wordService,
 		BoxService:  &boxService,
+		UserService: &userService,
 	}, nil
 }
