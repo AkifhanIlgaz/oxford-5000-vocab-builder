@@ -4,9 +4,7 @@ import ctrls "github.com/AkifhanIlgaz/vocab-builder/controllers"
 
 type controllers struct {
 	BoxController   *ctrls.BoxController
-	UserMiddleware  *ctrls.UserMiddleware
 	UsersController *ctrls.UsersController
-	// TODO: Add usercontroller
 }
 
 func Controllers(services *services) (*controllers, error) {
@@ -21,13 +19,8 @@ func Controllers(services *services) (*controllers, error) {
 		UserService: services.UserService,
 	}
 
-	userMiddleware := ctrls.UserMiddleware{
-		AuthService: services.AuthService,
-	}
-
 	return &controllers{
 		BoxController:   &boxController,
-		UserMiddleware:  &userMiddleware,
 		UsersController: &usersController,
 	}, nil
 }

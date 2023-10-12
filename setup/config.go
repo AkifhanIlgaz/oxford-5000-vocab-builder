@@ -10,9 +10,8 @@ import (
 )
 
 type config struct {
-	Mongo    database.MongoConfig
-	Bolt     database.BoltConfig // UserHomeDir + FileName
-	Firebase database.FirebaseConfig
+	Mongo database.MongoConfig
+	Bolt  database.BoltConfig // UserHomeDir + FileName
 }
 
 func Config() (*config, error) {
@@ -39,8 +38,6 @@ func Config() (*config, error) {
 		return nil, fmt.Errorf("load env: %w", err)
 	}
 	config.Bolt.Path = filepath.Join(home, boltFileName)
-
-	config.Firebase.Path = os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
 
 	return &config, nil
 }

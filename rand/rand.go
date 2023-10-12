@@ -11,7 +11,7 @@ func Bytes(n int) ([]byte, error) {
 
 	nRead, err := rand.Read(b)
 	if err != nil {
-		return nil, fmt.Errorf("rand bytes", err)
+		return nil, fmt.Errorf("rand bytes: %w", err)
 	}
 
 	if nRead < n {
