@@ -40,7 +40,7 @@ func NewUserService(client *mongo.Client) UserService {
 
 type User struct {
 	Uid          primitive.ObjectID `json:"uid" bson:"_id"`
-	Email        string             `json:"email" bson:"email"`
+	Email        string             `json:"-" bson:"email"`
 	PasswordHash string             `json:"-" bson:"passwordHash"`
 	CreatedAt    time.Time          `json:"-" bson:"createdAt"`
 }

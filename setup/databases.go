@@ -13,6 +13,9 @@ type databases struct {
 	Bolt  *bolt.DB
 }
 
+// TODO: Add firebase authentication
+// TODO: Use MongoDb instead of Bolt for box
+
 func Databases(config *config) (*databases, error) {
 	mongo, err := database.OpenMongo(config.Mongo)
 	if err != nil {

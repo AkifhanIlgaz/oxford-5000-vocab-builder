@@ -5,7 +5,18 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+type TokenService struct {
+	Collection *mongo.Collection
+}
+
+func NewTokenService(client *mongo.Client) TokenService {
+	collection := client.Database(Database).Collection(RefreshTokenCollection)
+
+	
+}
 
 type UserClaims struct {
 	Uid string `json:"uid"`

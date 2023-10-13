@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	Database        = "VocabBuilder"
-	UsersCollection = "Users"
-	WordsColleciton = "Words"
+	Database               = "VocabBuilder"
+	UsersCollection        = "Users"
+	WordsCollection        = "Words"
+	RefreshTokenCollection = "RefreshTokens"
 )
 
 var (
