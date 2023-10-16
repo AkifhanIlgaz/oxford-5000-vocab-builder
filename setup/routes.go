@@ -11,6 +11,9 @@ import (
 )
 
 // TODO: Uid middleware
+// TODO: Create /auth route for authentication purposes
+// TODO: Parse Authorization Bearer Header
+
 
 func Routes(controllers *controllers) *chi.Mux {
 	r := chi.NewRouter()
@@ -27,7 +30,7 @@ func Routes(controllers *controllers) *chi.Mux {
 
 				fmt.Println(bearerToken[1])
 
-				token, err := models.ParseIdToken(bearerToken[1])
+				token, err := models.ParseAccessToken(bearerToken[1])
 				if err != nil {
 					fmt.Fprint(w, "parse id token")
 					return
@@ -57,7 +60,7 @@ func Routes(controllers *controllers) *chi.Mux {
 			return
 		}
 
-		idToken, err := controllers.UsersController.TokenService.RefreshIdToken(claims.Uid, claims.RefreshToken)
+		idToken, err := controllers.UsersController.TokenService.RefreshAccessToken(claims.Subject, claims.RefreshToken)
 		if err != nil {
 			fmt.Fprint(w, "parse refresh token refresh")
 			return

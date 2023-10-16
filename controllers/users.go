@@ -25,7 +25,7 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	idToken, err := controller.TokenService.NewIdToken(user.Uid.Hex())
+	idToken, err := controller.TokenService.NewAccessToken(user.Uid.Hex())
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return

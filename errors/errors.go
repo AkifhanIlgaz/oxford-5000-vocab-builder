@@ -13,6 +13,7 @@ var (
 	Join = errors.Join
 	As   = errors.As
 	Is   = errors.Is
+	New  = errors.New
 )
 
 func MongoError(err error) error {

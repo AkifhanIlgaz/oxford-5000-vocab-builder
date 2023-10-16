@@ -14,12 +14,12 @@ import (
 )
 
 type TokenService struct {
-	UsersCollection        *mongo.Collection
-	RefreshTokenCollection *mongo.Collection
-	idTokenExpireDuration  time.Duration
+	UsersCollection           *mongo.Collection
+	RefreshTokenCollection    *mongo.Collection
+	accessTokenExpireDuration time.Duration
 }
 
-func NewTokenService(client *mongo.Client, idTokenExpireDuration time.Duration) TokenService {
+func NewTokenService(client *mongo.Client, accessTokenExpireDuration time.Duration) TokenService {
 	usersCollection := getCollection(client, UsersCollection)
 	refreshTokenCollection := getCollection(client, RefreshTokenCollection)
 
@@ -32,25 +32,20 @@ func NewTokenService(client *mongo.Client, idTokenExpireDuration time.Duration) 
 	refreshTokenCollection.Indexes().CreateOne(context.TODO(), indexModel)
 
 	return TokenService{
-		UsersCollection:        usersCollection,
-		RefreshTokenCollection: refreshTokenCollection,
-		idTokenExpireDuration:  idTokenExpireDuration,
+		UsersCollection:           usersCollection,
+		RefreshTokenCollection:    refreshTokenCollection,
+		accessTokenExpireDuration: accessTokenExpireDuration,
 	}
 }
 
-type UserClaims struct {
-	Uid string `json:"uid"`
-	jwt.RegisteredClaims
-}
-
-func (service *TokenService) NewIdToken(uid string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, UserClaims{
-		Uid: uid,
-		RegisteredClaims: jwt.RegisteredClaims{
+func (service *TokenService) NewAccessToken(uid string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		jwt.RegisteredClaims{
+			Subject:   uid,
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(service.idTokenExpireDuration)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(service.accessTokenExpireDuration)),
 		},
-	})
+	)
 
 	t, err := token.SignedString(Secret)
 	if err != nil {
@@ -61,7 +56,6 @@ func (service *TokenService) NewIdToken(uid string) (string, error) {
 }
 
 type RefreshClaims struct {
-	Uid                  string `bson:"uid"`
 	RefreshToken         string `bson:"refreshToken"`
 	jwt.RegisteredClaims `bson:"-"`
 }
@@ -82,9 +76,9 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 	}
 
 	claims := RefreshClaims{
-		Uid:          uid,
 		RefreshToken: refreshToken,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:  uid,
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
 	}
@@ -110,7 +104,7 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 User doesn't exist
 Refresh token expired && not valid => refresh token isn't same as the refresh token on DB
 */
-func (service *TokenService) RefreshIdToken(uid, refreshToken string) (string, error) {
+func (service *TokenService) RefreshAccessToken(uid, refreshToken string) (string, error) {
 	exists, err := service.CheckIfUserExists(uid)
 	if err != nil {
 		return "", fmt.Errorf("refresh id token: %w", err)
@@ -136,7 +130,7 @@ func (service *TokenService) RefreshIdToken(uid, refreshToken string) (string, e
 		return "", fmt.Errorf("invalid refresh token for the user")
 	}
 
-	token, err := service.NewIdToken(uid)
+	token, err := service.NewAccessToken(uid)
 	if err != nil {
 		return "", fmt.Errorf("refresh id token: %w", err)
 	}
@@ -163,17 +157,21 @@ func (service *TokenService) CheckIfUserExists(uid string) (bool, error) {
 }
 
 func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
-	return claims.Uid == uid && claims.RefreshToken == refreshToken
+	return claims.Subject == uid && claims.RefreshToken == refreshToken
 }
 
-func ParseIdToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
+func ParseAccessToken(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return Secret, nil
 	})
 }
 
 func ParseRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, &RefreshClaims{}, func(t *jwt.Token) (interface{}, error) {
+	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
 		return Secret, nil
 	})
+}
+
+func keyFunc(t *jwt.Token) (interface{}, error) {
+	return Secret, nil
 }
