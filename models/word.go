@@ -38,15 +38,20 @@ type Idiom struct {
 }
 
 type WordService struct {
-	Client *mongo.Client // Should I store words collection ?
+	Collection *mongo.Collection
+}
+
+func NewWordService(client *mongo.Client) WordService {
+	return WordService{
+		Collection: getCollection(client, WordsCollection),
+	}
 }
 
 func (service *WordService) GetWord(id int) (*WordInfo, error) {
 	var wordInfo WordInfo
-	wordCollection := service.Client.Database("VocabBuilder").Collection("Words")
 
 	filter := bson.D{{Key: "id", Value: id}}
-	err := wordCollection.FindOne(context.TODO(), filter).Decode(&wordInfo)
+	err := service.Collection.FindOne(context.TODO(), filter).Decode(&wordInfo)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, fmt.Errorf("get word: %w", err)

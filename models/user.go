@@ -23,7 +23,7 @@ type UserService struct {
 }
 
 func NewUserService(client *mongo.Client) UserService {
-	collection := client.Database(Database).Collection(UsersCollection)
+	collection := getCollection(client, UsersCollection)
 
 	indexModel := mongo.IndexModel{
 		Keys:    map[string]int{"email": 1},

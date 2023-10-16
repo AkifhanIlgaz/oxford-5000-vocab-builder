@@ -12,9 +12,7 @@ type services struct {
 
 func Services(databases *databases) (*services, error) {
 
-	wordService := models.WordService{
-		Client: databases.Mongo,
-	}
+	wordService := models.NewWordService(databases.Mongo)
 
 	userService := models.NewUserService(databases.Mongo)
 
