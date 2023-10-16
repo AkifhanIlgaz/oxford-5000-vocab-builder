@@ -25,18 +25,26 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	token, err := controller.TokenService.NewIdToken(user.Uid.Hex())
+	idToken, err := controller.TokenService.NewIdToken(user.Uid.Hex())
+	if err != nil {
+		fmt.Fprintf(w, "%v", err)
+		return
+	}
+
+	refreshToken, err := controller.TokenService.NewRefreshToken(user.Uid.Hex())
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return
 	}
 
 	err = json.NewEncoder(w).Encode(struct {
-		User  models.User `json:"user"`
-		Token string      `json:"token"`
+		User         models.User `json:"user"`
+		IdToken      string      `json:"idToken"`
+		RefreshToken string      `json:"refreshToken"`
 	}{
-		User:  *user,
-		Token: token,
+		User:         *user,
+		IdToken:      idToken,
+		RefreshToken: refreshToken,
 	})
 	if err != nil {
 		fmt.Println(err)
