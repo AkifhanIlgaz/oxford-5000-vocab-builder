@@ -26,6 +26,5 @@ func String(bytesPerToken int) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("rand string: %w", err)
 	}
-
-	return base64.URLEncoding.EncodeToString(b), nil
+	return base64.StdEncoding.EncodeToString(b), nil
 }
