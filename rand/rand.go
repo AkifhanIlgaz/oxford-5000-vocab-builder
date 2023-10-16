@@ -23,8 +23,9 @@ func Bytes(n int) ([]byte, error) {
 
 func String(bytesPerToken int) (string, error) {
 	b, err := Bytes(bytesPerToken)
+
 	if err != nil {
 		return "", fmt.Errorf("rand string: %w", err)
 	}
-	return base64.StdEncoding.EncodeToString(b), nil
+	return base64.URLEncoding.EncodeToString(b), nil
 }

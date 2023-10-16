@@ -8,7 +8,7 @@ import (
 
 const BearerScheme = "Bearer "
 
-func parseBearer(authHeader string) (string, error) {
+func ParseBearer(authHeader string) (string, error) {
 	if authHeader == "" {
 		return "", errors.New("authorization header required")
 	}
@@ -18,7 +18,7 @@ func parseBearer(authHeader string) (string, error) {
 		return "", errors.New("invalid bearer scheme")
 	}
 
-	if len(splitAuth) != 2 {
+	if len(splitAuth) != 44 {
 		return "", errors.New("invalid bearer scheme")
 	}
 
