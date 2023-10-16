@@ -9,9 +9,10 @@ import (
 )
 
 type UsersController struct {
-	WordService *models.WordService
-	BoxService  *models.BoxService
-	UserService *models.UserService
+	WordService  *models.WordService
+	BoxService   *models.BoxService
+	UserService  *models.UserService
+	TokenService *models.TokenService
 }
 
 func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,7 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	token, err := models.NewIdToken(user.Uid.Hex())
+	token, err := controller.TokenService.NewIdToken(user.Uid.Hex())
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return

@@ -2,7 +2,6 @@ package models
 
 import (
 	"os"
-	"time"
 )
 
 const (
@@ -10,10 +9,6 @@ const (
 	UsersCollection        = "Users"
 	WordsCollection        = "Words"
 	RefreshTokenCollection = "RefreshTokens"
-)
-
-var (
-	ExpireDuration time.Duration = 1 * time.Hour
 )
 
 var (

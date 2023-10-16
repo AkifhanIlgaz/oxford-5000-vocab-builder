@@ -9,14 +9,18 @@ import (
 )
 
 type TokenService struct {
-	Collection *mongo.Collection
+	UsersCollection            *mongo.Collection
+	RefreshTokenCollection     *mongo.Collection
+	idTokenExpireDuration      time.Duration
+	refreshTokenExpireDuration time.Duration
 }
 
-func NewTokenService(client *mongo.Client) *TokenService {
-	collection := client.Database(Database).Collection(RefreshTokenCollection)
-
+func NewTokenService(client *mongo.Client, idTokenExpireDuration, refreshTokenExpireDuration time.Duration) *TokenService {
 	return &TokenService{
-		Collection: collection,
+		UsersCollection:            getCollection(client, UsersCollection),
+		RefreshTokenCollection:     getCollection(client, RefreshTokenCollection),
+		idTokenExpireDuration:      idTokenExpireDuration,
+		refreshTokenExpireDuration: refreshTokenExpireDuration,
 	}
 }
 
@@ -30,7 +34,7 @@ func (service *TokenService) NewIdToken(uid string) (string, error) {
 		Uid: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ExpireDuration)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(service.idTokenExpireDuration)),
 		},
 	})
 
@@ -53,7 +57,7 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 		Uid: uid,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(ExpireDuration)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(service.refreshTokenExpireDuration)),
 		},
 	})
 
@@ -71,6 +75,7 @@ User doesn't exist
 Refresh token expired && not valid => refresh token isn't same as the refresh token on DB
 */
 func (service *TokenService) RefreshIdToken(uid, refreshToken string) (string, error) {
+	// TODO: Create random string as
 
 	panic("Implement")
 }
