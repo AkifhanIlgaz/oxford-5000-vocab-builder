@@ -71,37 +71,38 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("new refresh token: %w", err)
 	}
+	if !exists {
+		return "", fmt.Errorf("new refresh token: user doesn't exist")
 
-	if exists {
-		refreshToken, err := rand.String(32)
-		if err != nil {
-			return "", fmt.Errorf("new refresh token: %w", err)
-		}
-
-		claims := RefreshClaims{
-			Uid:          uid,
-			RefreshToken: refreshToken,
-			RegisteredClaims: jwt.RegisteredClaims{
-				IssuedAt: jwt.NewNumericDate(time.Now()),
-			},
-		}
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), claims)
-		if err != nil {
-			return "", fmt.Errorf("new id token: %w", err)
-		}
-
-		t, err := token.SignedString(Secret)
-		if err != nil {
-			return "", fmt.Errorf("new id token: %w", err)
-		}
-
-		return t, nil
 	}
 
-	return "", fmt.Errorf("new refresh token: user doesn't exist")
+	refreshToken, err := rand.String(32)
+	if err != nil {
+		return "", fmt.Errorf("new refresh token: %w", err)
+	}
+
+	claims := RefreshClaims{
+		Uid:          uid,
+		RefreshToken: refreshToken,
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), claims)
+	if err != nil {
+		return "", fmt.Errorf("new id token: %w", err)
+	}
+
+	t, err := token.SignedString(Secret)
+	if err != nil {
+		return "", fmt.Errorf("new id token: %w", err)
+	}
+
+	return t, nil
+
 }
 
 /*
@@ -110,8 +111,37 @@ User doesn't exist
 Refresh token expired && not valid => refresh token isn't same as the refresh token on DB
 */
 func (service *TokenService) RefreshIdToken(uid, refreshToken string) (string, error) {
+	exists, err := service.CheckIfUserExists(uid)
+	if err != nil {
+		return "", fmt.Errorf("refresh id token: %w", err)
+	}
+	if !exists {
+		return "", fmt.Errorf("refresh id token: user doesn't exist")
+	}
 
-	panic("Implement")
+	var refreshClaims RefreshClaims
+
+	err = service.RefreshTokenCollection.FindOne(context.TODO(), bson.M{
+		"uid": uid,
+	}).Decode(&refreshClaims)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return "", fmt.Errorf("refresh id token: refresh token doesn't exist for the user: %v", uid)
+		}
+		return "", fmt.Errorf("refresh id token: %w", err)
+	}
+
+	isMatch := checkRefreshClaims(&refreshClaims, uid, refreshToken)
+	if !isMatch {
+		return "", fmt.Errorf("invalid refresh token for the user")
+	}
+
+	token, err := service.NewIdToken(uid)
+	if err != nil {
+		return "", fmt.Errorf("refresh id token: %w", err)
+	}
+
+	return token, nil
 }
 
 // Returns true if user exists
@@ -129,7 +159,9 @@ func (service *TokenService) CheckIfUserExists(uid string) (bool, error) {
 		return false, fmt.Errorf("check if user exists: %w", err)
 	}
 
-	fmt.Println("count", count)
-
 	return count > 0, nil
+}
+
+func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
+	return claims.Uid == uid && claims.RefreshToken == refreshToken
 }
