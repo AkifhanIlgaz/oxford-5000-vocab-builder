@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type TokenService struct {
@@ -19,9 +20,20 @@ type TokenService struct {
 }
 
 func NewTokenService(client *mongo.Client, idTokenExpireDuration time.Duration) TokenService {
+	usersCollection := getCollection(client, UsersCollection)
+	refreshTokenCollection := getCollection(client, RefreshTokenCollection)
+
+	indexModel := mongo.IndexModel{
+		Keys:    map[string]int{"uid": 1},
+		Options: options.Index().SetUnique(true),
+	}
+
+	// TODO: Check error
+	refreshTokenCollection.Indexes().CreateOne(context.TODO(), indexModel)
+
 	return TokenService{
-		UsersCollection:        getCollection(client, UsersCollection),
-		RefreshTokenCollection: getCollection(client, RefreshTokenCollection),
+		UsersCollection:        usersCollection,
+		RefreshTokenCollection: refreshTokenCollection,
 		idTokenExpireDuration:  idTokenExpireDuration,
 	}
 }
@@ -49,18 +61,12 @@ func (service *TokenService) NewIdToken(uid string) (string, error) {
 }
 
 type RefreshClaims struct {
-	Uid          string
-	RefreshToken string
-	jwt.RegisteredClaims
+	Uid                  string `bson:"uid"`
+	RefreshToken         string `bson:"refreshToken"`
+	jwt.RegisteredClaims `bson:"-"`
 }
 
-// TODO: Create Refresh Token for user
-/*
-	!Errors
-		User doesn't exist
-*/
 func (service *TokenService) NewRefreshToken(uid string) (string, error) {
-	// TODO: Check if user exists
 	exists, err := service.CheckIfUserExists(uid)
 	if err != nil {
 		return "", fmt.Errorf("new refresh token: %w", err)
@@ -72,13 +78,20 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 			return "", fmt.Errorf("new refresh token: %w", err)
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, RefreshClaims{
+		claims := RefreshClaims{
 			Uid:          uid,
 			RefreshToken: refreshToken,
 			RegisteredClaims: jwt.RegisteredClaims{
 				IssuedAt: jwt.NewNumericDate(time.Now()),
 			},
-		})
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+		_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), claims)
+		if err != nil {
+			return "", fmt.Errorf("new id token: %w", err)
+		}
 
 		t, err := token.SignedString(Secret)
 		if err != nil {
@@ -86,10 +99,9 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 		}
 
 		return t, nil
-	} else {
-		return "", fmt.Errorf("new refresh token: user doesn't exist")
 	}
 
+	return "", fmt.Errorf("new refresh token: user doesn't exist")
 }
 
 /*
