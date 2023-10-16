@@ -43,6 +43,29 @@ func Routes(controllers *controllers) *chi.Mux {
 		r.Get("/auth/idtoken", nil)
 	})
 
+	r.Get("/auth/refresh", func(w http.ResponseWriter, r *http.Request) {
+		// parse refresh token
+		token, err := models.ParseRefreshToken(r.FormValue("refreshToken"))
+		if err != nil {
+			fmt.Fprint(w, "parse refresh token", err)
+			return
+		}
+
+		claims, ok := token.Claims.(*models.RefreshClaims)
+		if !ok {
+			fmt.Fprint(w, "parse refresh token interface")
+			return
+		}
+
+		idToken, err := controllers.UsersController.TokenService.RefreshIdToken(claims.Uid, claims.RefreshToken)
+		if err != nil {
+			fmt.Fprint(w, "parse refresh token refresh")
+			return
+		}
+
+		fmt.Fprint(w, idToken)
+	})
+
 	r.Route("/box", func(r chi.Router) {
 		r.Get("/today", controllers.BoxController.GetTodaysWords)
 		r.Post("/levelup/{id}", controllers.BoxController.LevelUp)

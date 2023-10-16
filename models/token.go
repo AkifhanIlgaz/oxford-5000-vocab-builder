@@ -171,3 +171,9 @@ func ParseIdToken(token string) (*jwt.Token, error) {
 		return Secret, nil
 	})
 }
+
+func ParseRefreshToken(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, &RefreshClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return Secret, nil
+	})
+}
