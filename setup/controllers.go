@@ -14,9 +14,10 @@ func Controllers(services *services) (*controllers, error) {
 	}
 
 	usersController := ctrls.UsersController{
-		WordService: services.WordService,
-		BoxService:  services.BoxService,
-		UserService: services.UserService,
+		WordService:  services.WordService,
+		BoxService:   services.BoxService,
+		UserService:  services.UserService,
+		TokenService: services.TokenService,
 	}
 
 	return &controllers{

@@ -165,3 +165,9 @@ func (service *TokenService) CheckIfUserExists(uid string) (bool, error) {
 func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
 	return claims.Uid == uid && claims.RefreshToken == refreshToken
 }
+
+func ParseIdToken(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, &UserClaims{}, func(t *jwt.Token) (interface{}, error) {
+		return Secret, nil
+	})
+}
