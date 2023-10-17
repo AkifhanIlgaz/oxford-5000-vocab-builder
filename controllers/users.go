@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/errors"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"golang.org/x/crypto/bcrypt"
@@ -106,10 +107,17 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 
 func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Request) {
 	// TODO: Parse access token
+	// Use Access Token Middleware
+	uid := context.Uid(r.Context())
 
 	// TODO: Set Authorization header empty ? Can I set client headers from backend (like cookie) ?
 
 	// TODO: Delete refresh token from DB
+	err := controller.TokenService.DeleteRefreshToken(uid)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
 }
 
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {

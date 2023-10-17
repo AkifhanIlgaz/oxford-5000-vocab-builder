@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/AkifhanIlgaz/vocab-builder/errors"
 	"github.com/AkifhanIlgaz/vocab-builder/rand"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
@@ -98,6 +99,21 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 
 	return t, nil
 
+}
+
+func (service *TokenService) DeleteRefreshToken(uid string) error {
+	res, err := service.RefreshTokenCollection.DeleteOne(context.TODO(), bson.M{
+		"uid": uid,
+	})
+	if err != nil {
+		return fmt.Errorf("delete refresh token: %w", err)
+	}
+
+	if res.DeletedCount == 0 {
+		return errors.New("refresh token doesn't exist")
+	}
+
+	return nil
 }
 
 /*
