@@ -16,15 +16,11 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	r := chi.NewRouter()
 
 	r.Route("/auth", func(r chi.Router) {
-		// TODO: Implement sign in endpoint
-		// TODO: Implement sign out endpoint
 		r.Post("/signup", controllers.UsersController.Signup)
+		r.Post("/signin", controllers.UsersController.Signin)
+		r.Post("/signout", controllers.UsersController.Signout)
 
-		// TODO: Implement /refresh endpoint && It will be used to generate new access token with refresh token
-		r.Get("/refresh", func(w http.ResponseWriter, r *http.Request) {
-			panic("// ! Implement")
-		})
-
+		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 	})
 
 	r.Route("/test", func(r chi.Router) {
