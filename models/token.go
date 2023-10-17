@@ -160,16 +160,12 @@ func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
 	return claims.Subject == uid && claims.RefreshToken == refreshToken
 }
 
-func ParseAccessToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return Secret, nil
-	})
+func (service *TokenService) ParseAccessToken(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, keyFunc)
 }
 
-func ParseRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return Secret, nil
-	})
+func (service *TokenService) ParseRefreshToken(token string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, keyFunc)
 }
 
 func keyFunc(t *jwt.Token) (interface{}, error) {

@@ -1,12 +1,8 @@
 package setup
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
-	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -14,59 +10,42 @@ import (
 // TODO: Create /auth route for authentication purposes
 // TODO: Parse Authorization Bearer Header
 
-
-func Routes(controllers *controllers) *chi.Mux {
+func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/auth/signup", controllers.UsersController.Signup)
+	r.Route("/auth", func(r chi.Router) {
+		// TODO: Implement sign in endpoint
+		// TODO: Implement sign out endpoint
+		r.Post("/signup", controllers.UsersController.Signup)
 
-	r.Group(func(r chi.Router) {
-		r.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				bearerToken := strings.Fields(r.Header.Get("Authorization"))
-				if len(bearerToken) < 2 {
-					fmt.Fprint(w, "invalid bearer token")
-				}
-
-				fmt.Println(bearerToken[1])
-
-				token, err := models.ParseAccessToken(bearerToken[1])
-				if err != nil {
-					fmt.Fprint(w, "parse id token")
-					return
-				}
-
-				enc := json.NewEncoder(w)
-				err = enc.Encode(token.Claims)
-				if err != nil {
-					fmt.Println(err)
-				}
-			})
+		// TODO: Implement /refresh endpoint && It will be used to generate new access token with refresh token
+		r.Get("/refresh", func(w http.ResponseWriter, r *http.Request) {
+			// ! Implement this function
 		})
-		r.Get("/auth/idtoken", nil)
+
 	})
 
 	r.Get("/auth/refresh", func(w http.ResponseWriter, r *http.Request) {
 		// parse refresh token
-		token, err := models.ParseRefreshToken(r.FormValue("refreshToken"))
-		if err != nil {
-			fmt.Fprint(w, "parse refresh token", err)
-			return
-		}
+		// token, err := (r.FormValue("refreshToken"))
+		// if err != nil {
+		// 	fmt.Fprint(w, "parse refresh token", err)
+		// 	return
+		// }
 
-		claims, ok := token.Claims.(*models.RefreshClaims)
-		if !ok {
-			fmt.Fprint(w, "parse refresh token interface")
-			return
-		}
+		// claims, ok := token.Claims.(*models.RefreshClaims)
+		// if !ok {
+		// 	fmt.Fprint(w, "parse refresh token interface")
+		// 	return
+		// }
 
-		idToken, err := controllers.UsersController.TokenService.RefreshAccessToken(claims.Subject, claims.RefreshToken)
-		if err != nil {
-			fmt.Fprint(w, "parse refresh token refresh")
-			return
-		}
+		// idToken, err := controllers.UsersController.TokenService.RefreshAccessToken(claims.Subject, claims.RefreshToken)
+		// if err != nil {
+		// 	fmt.Fprint(w, "parse refresh token refresh")
+		// 	return
+		// }
 
-		fmt.Fprint(w, idToken)
+		// fmt.Fprint(w, idToken)
 	})
 
 	r.Route("/box", func(r chi.Router) {

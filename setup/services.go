@@ -13,7 +13,7 @@ type services struct {
 	TokenService *models.TokenService
 }
 
-func Services(databases *databases) (*services, error) {
+func Services(databases *databases) *services {
 
 	wordService := models.NewWordService(databases.Mongo)
 
@@ -30,5 +30,5 @@ func Services(databases *databases) (*services, error) {
 		BoxService:   &boxService,
 		UserService:  &userService,
 		TokenService: &tokenService,
-	}, nil
+	}
 }

@@ -7,7 +7,7 @@ type controllers struct {
 	UsersController *ctrls.UsersController
 }
 
-func Controllers(services *services) (*controllers, error) {
+func Controllers(services *services) *controllers {
 	boxController := ctrls.BoxController{
 		BoxService:  services.BoxService,
 		WordService: services.WordService,
@@ -23,5 +23,5 @@ func Controllers(services *services) (*controllers, error) {
 	return &controllers{
 		BoxController:   &boxController,
 		UsersController: &usersController,
-	}, nil
+	}
 }
