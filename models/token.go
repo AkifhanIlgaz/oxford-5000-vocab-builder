@@ -24,7 +24,7 @@ func NewTokenService(client *mongo.Client, accessTokenExpireDuration time.Durati
 	refreshTokenCollection := getCollection(client, RefreshTokenCollection)
 
 	indexModel := mongo.IndexModel{
-		Keys:    map[string]int{"uid": 1},
+		Keys:    map[string]int{"uid": 2},
 		Options: options.Index().SetUnique(true),
 	}
 
@@ -49,7 +49,7 @@ func (service *TokenService) NewAccessToken(uid string) (string, error) {
 
 	t, err := token.SignedString(Secret)
 	if err != nil {
-		return "", fmt.Errorf("new id token: %w", err)
+		return "", fmt.Errorf("new access token: %w", err)
 	}
 
 	return t, nil
@@ -87,12 +87,12 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 
 	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), claims)
 	if err != nil {
-		return "", fmt.Errorf("new id token: %w", err)
+		return "", fmt.Errorf("new access token: %w", err)
 	}
 
 	t, err := token.SignedString(Secret)
 	if err != nil {
-		return "", fmt.Errorf("new id token: %w", err)
+		return "", fmt.Errorf("new access token: %w", err)
 	}
 
 	return t, nil
@@ -161,11 +161,11 @@ func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
 }
 
 func (service *TokenService) ParseAccessToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, keyFunc)
+	return jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, keyFunc)
 }
 
 func (service *TokenService) ParseRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, jwt.RegisteredClaims{}, keyFunc)
+	return jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, keyFunc)
 }
 
 func keyFunc(t *jwt.Token) (interface{}, error) {

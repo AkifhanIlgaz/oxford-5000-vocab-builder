@@ -1,11 +1,11 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/errors"
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 )
@@ -24,6 +24,7 @@ func NewAccessTokenMiddleware(tokenService *models.TokenService) *AccessTokenMid
 
 func (middleware *AccessTokenMiddleware) AccessToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Extract access token from Authorization Header
 		tokenString, err := parseBearer(r.Header.Get("Authorization"))
 		if err != nil {
 			fmt.Printf("access token middleware: %v\n", err)
@@ -31,17 +32,26 @@ func (middleware *AccessTokenMiddleware) AccessToken(next http.Handler) http.Han
 			return
 		}
 
+		// Parse access token
 		token, err := middleware.TokenService.ParseAccessToken(tokenString)
 		if err != nil {
-			fmt.Fprint(w, "parse id token")
+			fmt.Fprint(w, "parse access token", err)
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		enc := json.NewEncoder(w)
-		err = enc.Encode(token.Claims)
+		uid, err := token.Claims.GetSubject()
 		if err != nil {
 			fmt.Println(err)
+			next.ServeHTTP(w, r)
+			return
 		}
+
+		ctx := r.Context()
+		ctx = context.WithUid(ctx, uid)
+		r = r.WithContext(ctx)
+
+		next.ServeHTTP(w, r)
 	})
 }
 
@@ -52,11 +62,6 @@ func parseBearer(authHeader string) (string, error) {
 
 	splitAuth, found := strings.CutPrefix(authHeader, BearerScheme)
 	if !found {
-		return "", errors.New("invalid bearer scheme")
-	}
-
-	// 32 byte => base64 encoding => 44
-	if len(splitAuth) != 44 {
 		return "", errors.New("invalid bearer scheme")
 	}
 

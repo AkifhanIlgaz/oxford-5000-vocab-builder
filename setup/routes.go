@@ -1,8 +1,10 @@
 package setup
 
 import (
+	"fmt"
 	"net/http"
 
+	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -20,9 +22,18 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 
 		// TODO: Implement /refresh endpoint && It will be used to generate new access token with refresh token
 		r.Get("/refresh", func(w http.ResponseWriter, r *http.Request) {
-			// ! Implement this function
+			panic("// ! Implement")
 		})
 
+	})
+
+	r.Route("/test", func(r chi.Router) {
+		r.Use(middlewares.AccessTokenMiddleware.AccessToken)
+		r.Get("/access-token-middleware", func(w http.ResponseWriter, r *http.Request) {
+			uid := context.Uid(r.Context())
+
+			fmt.Fprint(w, uid)
+		})
 	})
 
 	r.Get("/auth/refresh", func(w http.ResponseWriter, r *http.Request) {
