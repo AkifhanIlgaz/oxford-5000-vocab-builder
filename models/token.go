@@ -56,6 +56,7 @@ func (service *TokenService) NewAccessToken(uid string) (string, error) {
 }
 
 type RefreshClaims struct {
+	Uid                  string `bson:"uid"`
 	RefreshToken         string `bson:"refreshToken"`
 	jwt.RegisteredClaims `bson:"-"`
 }
@@ -76,9 +77,9 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 	}
 
 	claims := RefreshClaims{
+		Uid:          uid,
 		RefreshToken: refreshToken,
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:  uid,
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
 	}

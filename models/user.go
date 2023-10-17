@@ -8,6 +8,7 @@ import (
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/AkifhanIlgaz/vocab-builder/errors"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -66,6 +67,22 @@ func (service *UserService) Create(email, password string) (*User, error) {
 			return nil, errors.ErrEmailTaken
 		}
 		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (service *UserService) GetByEmail(email string) (*User, error) {
+	var user User
+
+	err := service.Collection.FindOne(context.TODO(), bson.M{
+		"email": email,
+	}).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, errors.ErrUserNotExist
+		}
+		return nil, fmt.Errorf("get user by email: %w", err)
 	}
 
 	return &user, nil
