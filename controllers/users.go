@@ -106,13 +106,8 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 }
 
 func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Request) {
-	// TODO: Parse access token
-	// Use Access Token Middleware
 	uid := context.Uid(r.Context())
 
-	// TODO: Set Authorization header empty ? Can I set client headers from backend (like cookie) ?
-
-	// TODO: Delete refresh token from DB
 	err := controller.TokenService.DeleteRefreshToken(uid)
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -122,8 +117,36 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
 	// TODO: Extract refresh token from request
+	token := r.FormValue("refreshToken")
+	if token == "" {
+		http.Error(w, "Refresh token required", http.StatusBadRequest)
+		return
+	}
 
-	// TODO: Query database to check if refresh token credentials are true
+	refreshToken, err := controller.TokenService.ParseRefreshToken(token)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	claims, ok := refreshToken.Claims.(*models.RefreshClaims)
+	if !ok {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
 
-	// TODO: If then, generate access token
+	accessToken, err := controller.TokenService.RefreshAccessToken(claims.Uid, claims.RefreshToken)
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	err = enc.Encode(map[string]string{
+		"accessToken": accessToken,
+	})
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
 }

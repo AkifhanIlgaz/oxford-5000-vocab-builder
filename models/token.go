@@ -116,11 +116,6 @@ func (service *TokenService) DeleteRefreshToken(uid string) error {
 	return nil
 }
 
-/*
-!Errors
-User doesn't exist
-Refresh token expired && not valid => refresh token isn't same as the refresh token on DB
-*/
 func (service *TokenService) RefreshAccessToken(uid, refreshToken string) (string, error) {
 	exists, err := service.CheckIfUserExists(uid)
 	if err != nil {
@@ -142,8 +137,7 @@ func (service *TokenService) RefreshAccessToken(uid, refreshToken string) (strin
 		return "", fmt.Errorf("refresh id token: %w", err)
 	}
 
-	isMatch := checkRefreshClaims(&refreshClaims, uid, refreshToken)
-	if !isMatch {
+	if isMatch := checkRefreshClaims(&refreshClaims, uid, refreshToken); !isMatch {
 		return "", fmt.Errorf("invalid refresh token for the user")
 	}
 
@@ -182,7 +176,7 @@ func (service *TokenService) ParseAccessToken(token string) (*jwt.Token, error) 
 }
 
 func (service *TokenService) ParseRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, keyFunc)
+	return jwt.ParseWithClaims(token, &RefreshClaims{}, keyFunc)
 }
 
 func keyFunc(t *jwt.Token) (interface{}, error) {
