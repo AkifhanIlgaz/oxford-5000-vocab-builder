@@ -63,12 +63,6 @@ func (service *TokenService) NewAccessToken(uid string) (string, error) {
 	return t, nil
 }
 
-type RefreshClaims struct {
-	Uid                  string `bson:"uid"`
-	RefreshToken         string `bson:"refreshToken"`
-	jwt.RegisteredClaims `bson:"-"`
-}
-
 func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 	exists, err := service.CheckIfUserExists(uid)
 	if err != nil {
@@ -84,28 +78,20 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 		return "", fmt.Errorf("new refresh token: %w", err)
 	}
 
-	claims := RefreshClaims{
+	type data struct {
+		Uid          string `bson:"uid"`
+		RefreshToken string `bson:"refreshToken"`
+	}
+
+	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), data{
 		Uid:          uid,
 		RefreshToken: refreshToken,
-		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt: jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), claims)
+	})
 	if err != nil {
 		return "", fmt.Errorf("new access token: %w", err)
 	}
 
-	t, err := token.SignedString(Secret)
-	if err != nil {
-		return "", fmt.Errorf("new access token: %w", err)
-	}
-
-	return t, nil
-
+	return refreshToken, nil
 }
 
 func (service *TokenService) DeleteRefreshToken(uid string) error {
@@ -174,16 +160,8 @@ func (service *TokenService) CheckIfUserExists(uid string) (bool, error) {
 	return count > 0, nil
 }
 
-func checkRefreshClaims(claims *RefreshClaims, uid, refreshToken string) bool {
-	return claims.Uid == uid && claims.RefreshToken == refreshToken
-}
-
 func (service *TokenService) ParseAccessToken(token string) (*jwt.Token, error) {
 	return jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, keyFunc)
-}
-
-func (service *TokenService) ParseRefreshToken(token string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(token, &RefreshClaims{}, keyFunc)
 }
 
 func keyFunc(t *jwt.Token) (interface{}, error) {
