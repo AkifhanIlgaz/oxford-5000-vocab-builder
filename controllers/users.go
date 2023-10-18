@@ -133,32 +133,22 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 // TODO: After refresh token is consumed generate new refresh token and invalidate the previous one.
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
 	// TODO: Extract refresh token from request
-	token := r.FormValue("refreshToken")
-	if token == "" {
+	refreshToken := r.FormValue("refreshToken")
+	if refreshToken == "" {
 		http.Error(w, "Refresh token required", http.StatusBadRequest)
 		return
 	}
 
-	refreshToken, err := controller.TokenService.ParseRefreshToken(token)
-	if err != nil {
-		http.Error(w, "Something went wrong", http.StatusBadRequest)
-		return
-	}
-	claims, ok := refreshToken.Claims.(*models.RefreshClaims)
-	if !ok {
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
-
-	accessToken, err := controller.TokenService.RefreshAccessToken(claims.Uid, claims.RefreshToken)
+	newAccessToken, newRefreshToken, err := controller.TokenService.RefreshAccessToken(refreshToken)
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
 
 	enc := json.NewEncoder(w)
-	err = enc.Encode(map[string]string{
-		"accessToken": accessToken,
+	err = enc.Encode(&AuthenticationResponse{
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
 	})
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)

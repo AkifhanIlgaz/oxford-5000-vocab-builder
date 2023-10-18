@@ -9,7 +9,6 @@ import (
 	"github.com/AkifhanIlgaz/vocab-builder/rand"
 	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -63,27 +62,20 @@ func (service *TokenService) NewAccessToken(uid string) (string, error) {
 	return t, nil
 }
 
-func (service *TokenService) NewRefreshToken(uid string) (string, error) {
-	exists, err := service.CheckIfUserExists(uid)
-	if err != nil {
-		return "", fmt.Errorf("new refresh token: %w", err)
-	}
-	if !exists {
-		return "", fmt.Errorf("new refresh token: user doesn't exist")
+type refreshTokenInfo struct {
+	Uid          string `bson:"uid"`
+	RefreshToken string `bson:"refreshToken"`
+}
 
-	}
+func (service *TokenService) NewRefreshToken(uid string) (string, error) {
+	// ! We don't need to check whether user exists since we are checking it when client wants to access user information
 
 	refreshToken, err := rand.String(32)
 	if err != nil {
 		return "", fmt.Errorf("new refresh token: %w", err)
 	}
 
-	type data struct {
-		Uid          string `bson:"uid"`
-		RefreshToken string `bson:"refreshToken"`
-	}
-
-	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), data{
+	_, err = service.RefreshTokenCollection.InsertOne(context.TODO(), refreshTokenInfo{
 		Uid:          uid,
 		RefreshToken: refreshToken,
 	})
@@ -109,55 +101,32 @@ func (service *TokenService) DeleteRefreshToken(uid string) error {
 	return nil
 }
 
-func (service *TokenService) RefreshAccessToken(uid, refreshToken string) (string, error) {
-	exists, err := service.CheckIfUserExists(uid)
+func (service *TokenService) RefreshAccessToken(refreshToken string) (newAccessToken string, newRefreshToken string, err error) {
+	var info refreshTokenInfo
+
+	newRefreshToken, err = rand.String(32)
 	if err != nil {
-		return "", fmt.Errorf("refresh id token: %w", err)
-	}
-	if !exists {
-		return "", fmt.Errorf("refresh id token: user doesn't exist")
+		return "", "", fmt.Errorf("refresh access token: %w", err)
 	}
 
-	var refreshClaims RefreshClaims
-
-	err = service.RefreshTokenCollection.FindOne(context.TODO(), bson.M{
-		"uid": uid,
-	}).Decode(&refreshClaims)
+	err = service.RefreshTokenCollection.FindOneAndUpdate(context.TODO(), bson.M{
+		"refreshToken": refreshToken,
+	}, bson.M{
+		"refreshToken": newRefreshToken,
+	}).Decode(&info)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return "", fmt.Errorf("refresh id token: refresh token doesn't exist for the user: %v", uid)
+			return "", "", errors.New("refresh access token: refresh token doesn't exist for the user:")
 		}
-		return "", fmt.Errorf("refresh id token: %w", err)
+		return "", "", fmt.Errorf("refresh access token: %w", err)
 	}
 
-	if isMatch := checkRefreshClaims(&refreshClaims, uid, refreshToken); !isMatch {
-		return "", fmt.Errorf("invalid refresh token for the user")
-	}
-
-	token, err := service.NewAccessToken(uid)
+	newAccessToken, err = service.NewAccessToken(info.Uid)
 	if err != nil {
-		return "", fmt.Errorf("refresh id token: %w", err)
+		return "", "", fmt.Errorf("refresh access token: %w", err)
 	}
 
-	return token, nil
-}
-
-// Returns true if user exists
-func (service *TokenService) CheckIfUserExists(uid string) (bool, error) {
-	objId, err := primitive.ObjectIDFromHex(uid)
-	if err != nil {
-		return false, fmt.Errorf("check if user exists: %w", err)
-	}
-
-	count, err := service.UsersCollection.CountDocuments(context.TODO(), bson.M{
-		"_id": objId,
-	})
-
-	if err != nil {
-		return false, fmt.Errorf("check if user exists: %w", err)
-	}
-
-	return count > 0, nil
+	return
 }
 
 func (service *TokenService) ParseAccessToken(token string) (*jwt.Token, error) {
