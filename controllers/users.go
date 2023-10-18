@@ -23,14 +23,6 @@ type AuthenticationResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
-/*
-	TODO: When user is authenticated return
-	{
-		accessToken: "ey........"
-		refreshToken: "sdilfksşdflk"
-	}
-*/
-
 func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
@@ -53,12 +45,7 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(struct {
-		User         models.User `json:"user"`
-		AccessToken  string      `json:"accessToken"`
-		RefreshToken string      `json:"refreshToken"`
-	}{
-		User:         *user,
+	err = json.NewEncoder(w).Encode(&AuthenticationResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
@@ -105,10 +92,7 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(struct {
-		AccessToken  string `json:"accessToken"`
-		RefreshToken string `json:"refreshToken"`
-	}{
+	err = json.NewEncoder(w).Encode(&AuthenticationResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	})
@@ -128,11 +112,7 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-// TODO: Refresh token is random string. Don't use JWT for refresh token
-// TODO: Use only refresh token to generate new access token.
-// TODO: After refresh token is consumed generate new refresh token and invalidate the previous one.
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	// TODO: Extract refresh token from request
 	refreshToken := r.FormValue("refreshToken")
 	if refreshToken == "" {
 		http.Error(w, "Refresh token required", http.StatusBadRequest)
