@@ -1,8 +1,6 @@
 package setup
 
 import (
-	"time"
-
 	"github.com/AkifhanIlgaz/vocab-builder/models"
 )
 
@@ -19,7 +17,7 @@ func Services(databases *databases) *services {
 
 	userService := models.NewUserService(databases.Mongo)
 
-	tokenService := models.NewTokenService(databases.Mongo, 15*time.Minute)
+	tokenService := models.NewTokenService(databases.Mongo, nil)
 
 	boxService := models.BoxService{
 		DB: databases.Bolt,

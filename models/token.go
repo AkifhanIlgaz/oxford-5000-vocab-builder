@@ -14,13 +14,20 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const defaultAccessTokenExpireDuration = 60 * time.Minute
+
 type TokenService struct {
 	UsersCollection           *mongo.Collection
 	RefreshTokenCollection    *mongo.Collection
 	accessTokenExpireDuration time.Duration
 }
 
-func NewTokenService(client *mongo.Client, accessTokenExpireDuration time.Duration) TokenService {
+func NewTokenService(client *mongo.Client, accessTokenExpireDuration *time.Duration) TokenService {
+	expireDuration := defaultAccessTokenExpireDuration
+	if accessTokenExpireDuration != nil {
+		expireDuration = *accessTokenExpireDuration
+	}
+
 	usersCollection := getCollection(client, UsersCollection)
 	refreshTokenCollection := getCollection(client, RefreshTokenCollection)
 
@@ -35,7 +42,7 @@ func NewTokenService(client *mongo.Client, accessTokenExpireDuration time.Durati
 	return TokenService{
 		UsersCollection:           usersCollection,
 		RefreshTokenCollection:    refreshTokenCollection,
-		accessTokenExpireDuration: accessTokenExpireDuration,
+		accessTokenExpireDuration: expireDuration,
 	}
 }
 

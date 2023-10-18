@@ -18,7 +18,11 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signup", controllers.UsersController.Signup)
 		r.Post("/signin", controllers.UsersController.Signin)
-		r.Post("/signout", controllers.UsersController.Signout)
+
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.AccessTokenMiddleware.AccessToken)
+			r.Post("/signout", controllers.UsersController.Signout)
+		})
 
 		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 	})
