@@ -6,6 +6,7 @@ import (
 
 	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/oauth2"
 )
 
 // TODO: Uid middleware
@@ -41,6 +42,8 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 		r.Post("/levelup/{id}", controllers.BoxController.LevelUp)
 		r.Post("/leveldown/{id}", controllers.BoxController.LevelDown)
 	})
+
+	oauth2.NewClient(nil, oauth2.StaticTokenSource(&oauth2.Token{}))
 
 	return r
 }
