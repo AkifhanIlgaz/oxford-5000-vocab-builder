@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type GithubOAuthConfig struct {
+type GithubOAuth struct {
 	ClientKey    string
 	ClientSecret string
 	AuthUrl      string
@@ -13,7 +13,7 @@ type GithubOAuthConfig struct {
 	UserUrl      string
 }
 
-func NewGithubConfig() (*GithubOAuthConfig, error) {
+func NewGithubOAuth() (*GithubOAuth, error) {
 	key := os.Getenv("GITHUB_CLIENT_KEY")
 	if key == "" {
 		return nil, errors.New("github client key required")
@@ -24,7 +24,7 @@ func NewGithubConfig() (*GithubOAuthConfig, error) {
 		return nil, errors.New("github secret key required")
 	}
 
-	return &GithubOAuthConfig{
+	return &GithubOAuth{
 		ClientKey:    key,
 		ClientSecret: secret,
 		AuthUrl:      "https://github.com/login/oauth/authorize",
