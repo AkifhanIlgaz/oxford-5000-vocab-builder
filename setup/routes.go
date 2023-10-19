@@ -9,10 +9,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// TODO: Uid middleware
-// TODO: Create /auth route for authentication purposes
-// TODO: Parse Authorization Bearer Header
-
 func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	r := chi.NewRouter()
 
