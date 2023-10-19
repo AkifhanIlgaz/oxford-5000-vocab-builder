@@ -6,23 +6,12 @@ import (
 
 	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/go-chi/chi/v5"
-	"golang.org/x/oauth2"
 )
 
 func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Route("/auth", func(r chi.Router) {
-		r.Post("/signup", controllers.UsersController.Signup)
-		r.Post("/signin", controllers.UsersController.Signin)
-
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AccessTokenMiddleware.AccessToken)
-			r.Post("/signout", controllers.UsersController.Signout)
-		})
-
-		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
-	})
+	Auth(r, controllers, middlewares)
 
 	r.Route("/test", func(r chi.Router) {
 		r.Use(middlewares.AccessTokenMiddleware.AccessToken)
@@ -39,7 +28,30 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 		r.Post("/leveldown/{id}", controllers.BoxController.LevelDown)
 	})
 
-	oauth2.NewClient(nil, oauth2.StaticTokenSource(&oauth2.Token{}))
-
 	return r
+}
+
+// TODO: Get OAuth config from env
+// TODO: Create HTTP client to authorize access token
+type OAuthConfig struct {
+}
+
+func Auth(r *chi.Mux, controllers *controllers, middlewares *middlewares) error {
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/signup", controllers.UsersController.Signup)
+		r.Post("/signin", controllers.UsersController.Signin)
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.AccessTokenMiddleware.AccessToken)
+			r.Post("/signout", controllers.UsersController.Signout)
+		})
+		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
+
+		r.Route("/login", func(r chi.Router) {
+			r.Get("/github", func(w http.ResponseWriter, r *http.Request) {})
+			r.Get("/github/callback", func(w http.ResponseWriter, r *http.Request) {})
+		})
+
+	})
+
+	return nil
 }
