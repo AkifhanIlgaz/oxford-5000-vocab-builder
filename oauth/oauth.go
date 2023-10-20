@@ -1,8 +1,14 @@
 package oauth
 
-import "github.com/AkifhanIlgaz/vocab-builder/oauth/config"
+import (
+	"fmt"
+)
 
-func Setup() {
-	cfg, err := config.NewOAuthConfig()
-	
+func Setup() (*OAuthHandlers, error) {
+	oauth, err := NewOAuthHandlers()
+	if err != nil {
+		return nil, fmt.Errorf("oauth setup: %w", err)
+	}
+
+	return oauth, err
 }

@@ -5,13 +5,31 @@ import (
 	"net/http"
 
 	"github.com/AkifhanIlgaz/vocab-builder/context"
+	"github.com/AkifhanIlgaz/vocab-builder/oauth"
 	"github.com/go-chi/chi/v5"
 )
 
-func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
+func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middlewares *middlewares) *chi.Mux {
 	r := chi.NewRouter()
 
-	Auth(r, controllers, middlewares)
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/signup", controllers.UsersController.Signup)
+		r.Post("/signin", controllers.UsersController.Signin)
+		r.Group(func(r chi.Router) {
+			r.Use(middlewares.AccessTokenMiddleware.AccessToken)
+			r.Post("/signout", controllers.UsersController.Signout)
+		})
+		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
+
+		r.Route("/signin", func(r chi.Router) {
+			r.Get("/github", func(w http.ResponseWriter, r *http.Request) {})
+			r.Get("/github/callback", func(w http.ResponseWriter, r *http.Request) {})
+
+			r.Get("/google", oauthHandlers.Google.Signin)
+			r.Get("/google/callback", func(w http.ResponseWriter, r *http.Request) {})
+		})
+
+	})
 
 	r.Route("/test", func(r chi.Router) {
 		r.Use(middlewares.AccessTokenMiddleware.AccessToken)
@@ -31,27 +49,7 @@ func Routes(controllers *controllers, middlewares *middlewares) *chi.Mux {
 	return r
 }
 
-// TODO: Get OAuth config from env
-// TODO: Create HTTP client to authorize access token
-type OAuthConfig struct {
-}
-
-func Auth(r *chi.Mux, controllers *controllers, middlewares *middlewares) error {
-	r.Route("/auth", func(r chi.Router) {
-		r.Post("/signup", controllers.UsersController.Signup)
-		r.Post("/signin", controllers.UsersController.Signin)
-		r.Group(func(r chi.Router) {
-			r.Use(middlewares.AccessTokenMiddleware.AccessToken)
-			r.Post("/signout", controllers.UsersController.Signout)
-		})
-		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
-
-		r.Route("/login", func(r chi.Router) {
-			r.Get("/github", func(w http.ResponseWriter, r *http.Request) {})
-			r.Get("/github/callback", func(w http.ResponseWriter, r *http.Request) {})
-		})
-
-	})
+func Auth(r *chi.Mux, controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middlewares *middlewares) error {
 
 	return nil
 }

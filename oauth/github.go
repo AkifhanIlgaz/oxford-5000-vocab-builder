@@ -1,4 +1,4 @@
-package config
+package oauth
 
 import (
 	"errors"
@@ -14,12 +14,12 @@ type GithubOAuth struct {
 }
 
 func NewGithubOAuth() (*GithubOAuth, error) {
-	key := os.Getenv("GITHUB_CLIENT_KEY")
+	key := os.Getenv("GITHUB_CLIENT_ID")
 	if key == "" {
 		return nil, errors.New("github client key required")
 	}
 
-	secret := os.Getenv("GITHUB_CLIENT_KEY")
+	secret := os.Getenv("GITHUB_CLIENT_SECRET")
 	if secret == "" {
 		return nil, errors.New("github secret key required")
 	}

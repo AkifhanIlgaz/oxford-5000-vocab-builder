@@ -1,4 +1,4 @@
-package config
+package oauth
 
 import (
 	"errors"
@@ -14,12 +14,12 @@ type TwitterOAuth struct {
 }
 
 func NewTwitterOauth() (*TwitterOAuth, error) {
-	key := os.Getenv("TWITTER_CLIENT_KEY")
+	key := os.Getenv("TWITTER_CLIENT_ID")
 	if key == "" {
 		return nil, errors.New("twitter client key required")
 	}
 
-	secret := os.Getenv("TWITTER_CLIENT_KEY")
+	secret := os.Getenv("TWITTER_CLIENT_SECRET")
 	if secret == "" {
 		return nil, errors.New("twitter secret key required")
 	}

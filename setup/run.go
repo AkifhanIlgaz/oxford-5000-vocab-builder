@@ -3,6 +3,8 @@ package setup
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/AkifhanIlgaz/vocab-builder/oauth"
 )
 
 func Run(port string) error {
@@ -16,13 +18,18 @@ func Run(port string) error {
 		return fmt.Errorf("run: %w", err)
 	}
 
+	oauthHandlers, err := oauth.Setup()
+	if err != nil {
+		return fmt.Errorf("run: %w", err)
+	}
+
 	services := Services(databases)
 
 	controllers := Controllers(services)
 
 	middlewares := Middlewares(services)
 
-	r := Routes(controllers, middlewares)
+	r := Routes(controllers, oauthHandlers, middlewares)
 
 	fmt.Println("Starting server on", port)
 	return http.ListenAndServe(port, r)
