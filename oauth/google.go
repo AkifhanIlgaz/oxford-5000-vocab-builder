@@ -12,6 +12,11 @@ import (
 	"github.com/AkifhanIlgaz/vocab-builder/rand"
 )
 
+const (
+	invalidRequest     = "invalid_request"
+	invalidCredentials = "Invalid Credentials"
+)
+
 type GoogleOAuth struct {
 	ClientKey    string
 	ClientSecret string
@@ -45,7 +50,7 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 		ClientKey:    key,
 		ClientSecret: secret,
 		AuthUrl:      "https://accounts.google.com/o/oauth2/auth",
-		TokenUrl:     "https://oauth2.googleapis.com/token",
+		TokenUrl:     "https://www.googleapis.com/oauth2/v4/token",
 		UserUrl:      "https://www.googleapis.com/oauth2/v3/userinfo",
 		RedirectUrl:  "http://localhost:3000/auth/signin/google/callback",
 	}, nil
@@ -87,19 +92,76 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 	enc.Encode(tokenInfo)
 }
 
+// middleware
 func (google *GoogleOAuth) VerifyAccessToken(w http.ResponseWriter, r *http.Request) {
 	accessToken := r.URL.Query().Get("access_token")
-	fmt.Println(accessToken)
 
 	req, _ := http.NewRequest("GET", google.UserUrl, nil)
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println("err", err)
+	}
+
+	body, _ := io.ReadAll(res.Body)
+	var respBody map[string]string
+	json.Unmarshal(body, &respBody)
+
+	if isInvalidRequest(respBody) {
+		// TODO: http return invalid token error
+		// Client will go to /refresh endpoint to obtain new access token
+		w.WriteHeader(http.StatusUnauthorized)
+		json.NewEncoder(w).Encode(&respBody)
+		return
+	}
+
+	json.NewEncoder(w).Encode(&respBody)
+
+}
+
+func isInvalidRequest(respBody map[string]string) bool {
+	return respBody["error"] == invalidRequest && respBody["error_description"] == invalidCredentials
+}
+
+func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWriter, r *http.Request) {
+	refreshToken := r.URL.Query().Get("refresh_token")
+
+	requestBodyMap := map[string]string{
+		"grant_type":    "refresh_token",
+		"client_id":     google.ClientKey,
+		"client_secret": google.ClientSecret,
+		"refresh_token": refreshToken,
+	}
+	requestJSON, _ := json.Marshal(requestBodyMap)
+
+	req, err := http.NewRequest(
+		"POST",
+		google.TokenUrl,
+		bytes.NewBuffer(requestJSON),
+	)
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	body, _ := io.ReadAll(res.Body)
 
-	fmt.Println(string(body))
+	var data tokenInfo
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+	}
+
+	enc := json.NewEncoder(w)
+	err = enc.Encode(&data)
+
 }
 
 func (google *GoogleOAuth) createTokenRequest(r *http.Request) (*http.Request, error) {
