@@ -27,6 +27,7 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 
 			r.Get("/google", oauthHandlers.Google.Signin)
 			r.Get("/google/callback", oauthHandlers.Google.Callback)
+			r.Get("/google/verify", oauthHandlers.Google.VerifyAccessToken)
 		})
 
 	})

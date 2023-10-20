@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 	"os"
 
@@ -19,6 +18,16 @@ type GoogleOAuth struct {
 	AuthUrl      string
 	TokenUrl     string
 	UserUrl      string
+	RedirectUrl  string
+}
+
+type tokenInfo struct {
+	AccessToken  string `json:"access_token"`
+	ExpiresIn    int    `json:"expires_in"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	Scope        string `json:"scope"`
+	IdToken      string `json:"id_token"`
 }
 
 func NewGoogleOauth() (*GoogleOAuth, error) {
@@ -32,13 +41,13 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 		return nil, errors.New("google secret key required")
 	}
 
-	// TODO: Add redirect uri
 	return &GoogleOAuth{
 		ClientKey:    key,
 		ClientSecret: secret,
 		AuthUrl:      "https://accounts.google.com/o/oauth2/auth",
 		TokenUrl:     "https://oauth2.googleapis.com/token",
 		UserUrl:      "https://www.googleapis.com/oauth2/v3/userinfo",
+		RedirectUrl:  "http://localhost:3000/auth/signin/google/callback",
 	}, nil
 }
 
@@ -48,7 +57,7 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 	query.Set("access_type", "offline")
 	query.Set("response_type", "code")
 	query.Set("scope", "email")
-	query.Set("redirect_uri", "http://localhost:3000/auth/signin/google/callback")
+	query.Set("redirect_uri", google.RedirectUrl)
 	// ? How to use state
 	if state, err := rand.String(32); err == nil {
 		query.Set("state", state)
@@ -60,7 +69,40 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check state
+	req, err := google.createTokenRequest(r)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	tokenInfo, err := google.exchangeCodeForTokens(req)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	enc := json.NewEncoder(w)
+	enc.Encode(tokenInfo)
+}
+
+func (google *GoogleOAuth) VerifyAccessToken(w http.ResponseWriter, r *http.Request) {
+	accessToken := r.URL.Query().Get("access_token")
+	fmt.Println(accessToken)
+
+	req, _ := http.NewRequest("GET", google.UserUrl, nil)
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+
+	res, _ := http.DefaultClient.Do(req)
+
+	body, _ := io.ReadAll(res.Body)
+
+	fmt.Println(string(body))
+}
+
+func (google *GoogleOAuth) createTokenRequest(r *http.Request) (*http.Request, error) {
 	code := r.URL.Query().Get("code")
 
 	requestBodyMap := map[string]string{
@@ -68,32 +110,40 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 		"client_id":     google.ClientKey,
 		"client_secret": google.ClientSecret,
 		"code":          code,
-		"redirect_uri":  "http://localhost:3000/auth/signin/google/callback",
+		"redirect_uri":  google.RedirectUrl,
 	}
 	requestJSON, _ := json.Marshal(requestBodyMap)
 
-	req, reqerr := http.NewRequest(
+	req, err := http.NewRequest(
 		"POST",
 		google.TokenUrl,
 		bytes.NewBuffer(requestJSON),
 	)
-	if reqerr != nil {
-		log.Panic("Request creation failed")
+	if err != nil {
+		return nil, fmt.Errorf("create token request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	resp, resperr := http.DefaultClient.Do(req)
-	if resperr != nil {
-		log.Panic("Request failed")
+	return req, nil
+}
+
+func (google *GoogleOAuth) exchangeCodeForTokens(r *http.Request) (*tokenInfo, error) {
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return nil, fmt.Errorf("exchange code for tokens: %w", err)
 	}
 
-	respbody, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(respbody))
-	// Convert stringified JSON to a struct object of type githubAccessTokenResponse
-	var respBody map[any]any
-	json.Unmarshal(respbody, &respBody)
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("exchange code for tokens: %w", err)
+	}
 
-	fmt.Fprint(w, respBody)
+	var data tokenInfo
+	err = json.Unmarshal(respBody, &data)
+	if err != nil {
+		return nil, fmt.Errorf("exchange code for tokens: %w", err)
+	}
 
+	return &data, nil
 }
