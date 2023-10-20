@@ -26,7 +26,7 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 			r.Get("/github/callback", func(w http.ResponseWriter, r *http.Request) {})
 
 			r.Get("/google", oauthHandlers.Google.Signin)
-			r.Get("/google/callback", func(w http.ResponseWriter, r *http.Request) {})
+			r.Get("/google/callback", oauthHandlers.Google.Callback)
 		})
 
 	})

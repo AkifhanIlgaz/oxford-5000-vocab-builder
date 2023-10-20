@@ -1,8 +1,12 @@
 package oauth
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 
@@ -44,17 +48,52 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 	query.Set("access_type", "offline")
 	query.Set("response_type", "code")
 	query.Set("scope", "email")
-	query.Set("redirect_uri", "http://localhost:3000/auth/google/callback")
+	query.Set("redirect_uri", "http://localhost:3000/auth/signin/google/callback")
+	// ? How to use state
 	if state, err := rand.String(32); err == nil {
 		query.Set("state", state)
 	}
 
 	url := fmt.Sprintf("%s?%s", google.AuthUrl, query.Encode())
-	fmt.Println(url)
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
+	// TODO: Check state
+	code := r.URL.Query().Get("code")
+
+	requestBodyMap := map[string]string{
+		"grant_type":    "authorization_code",
+		"client_id":     google.ClientKey,
+		"client_secret": google.ClientSecret,
+		"code":          code,
+		"redirect_uri":  "http://localhost:3000/auth/signin/google/callback",
+	}
+	requestJSON, _ := json.Marshal(requestBodyMap)
+
+	req, reqerr := http.NewRequest(
+		"POST",
+		google.TokenUrl,
+		bytes.NewBuffer(requestJSON),
+	)
+	if reqerr != nil {
+		log.Panic("Request creation failed")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+
+	resp, resperr := http.DefaultClient.Do(req)
+	if resperr != nil {
+		log.Panic("Request failed")
+	}
+
+	respbody, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(respbody))
+	// Convert stringified JSON to a struct object of type githubAccessTokenResponse
+	var respBody map[any]any
+	json.Unmarshal(respbody, &respBody)
+
+	fmt.Fprint(w, respBody)
 
 }
