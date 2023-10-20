@@ -27,12 +27,13 @@ type GoogleOAuth struct {
 }
 
 type tokenInfo struct {
-	AccessToken  string `json:"access_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	Scope        string `json:"scope"`
-	IdToken      string `json:"id_token"`
+	Provider     Provider `json:"provider"`
+	AccessToken  string   `json:"access_token"`
+	ExpiresIn    int      `json:"expires_in"`
+	RefreshToken string   `json:"refresh_token"`
+	TokenType    string   `json:"token_type"`
+	Scope        string   `json:"scope"`
+	IdToken      string   `json:"id_token"`
 }
 
 func NewGoogleOauth() (*GoogleOAuth, error) {
@@ -87,13 +88,13 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
+	tokenInfo.Provider = ProviderGoogle
 
-	enc := json.NewEncoder(w)
-	enc.Encode(tokenInfo)
+	json.NewEncoder(w).Encode(tokenInfo)
 }
 
 // middleware
-func (google *GoogleOAuth) VerifyAccessToken(w http.ResponseWriter, r *http.Request) {
+func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
 	accessToken := r.URL.Query().Get("access_token")
 
 	req, _ := http.NewRequest("GET", google.UserUrl, nil)
