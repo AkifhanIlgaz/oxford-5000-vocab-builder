@@ -22,8 +22,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 
 		r.Route("/signin", func(r chi.Router) {
-			r.Get("/github", func(w http.ResponseWriter, r *http.Request) {})
-			r.Get("/github/callback", func(w http.ResponseWriter, r *http.Request) {})
+			r.Get("/github", oauthHandlers.Github.Signin)
+			r.Get("/github/callback", oauthHandlers.Github.Callback)
 
 			r.Get("/google", oauthHandlers.Google.Signin)
 			r.Get("/google/callback", oauthHandlers.Google.Callback)
