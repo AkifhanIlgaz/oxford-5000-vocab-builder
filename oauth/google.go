@@ -71,7 +71,9 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("%s?%s", google.AuthUrl, query.Encode())
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	fmt.Println(url)
+
+	http.Redirect(w, r, url, http.StatusFound)
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
