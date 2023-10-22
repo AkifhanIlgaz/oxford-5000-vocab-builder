@@ -10,6 +10,8 @@ import (
 	"os"
 
 	"github.com/AkifhanIlgaz/vocab-builder/rand"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 const (
@@ -24,6 +26,7 @@ type GoogleOAuth struct {
 	TokenUrl     string
 	UserUrl      string
 	RedirectUrl  string
+	Config       oauth2.Config
 }
 
 type tokenInfo struct {
@@ -47,13 +50,23 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 		return nil, errors.New("google secret key required")
 	}
 
+	// cfg := oauth2.Config{
+	// 	ClientID:     key,
+	// 	ClientSecret: secret,
+	// 	Endpoint:     google.Endpoint,
+	// 	RedirectURL:  "http://localhost:3000/auth/signin/google/callback",
+	// 	Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
+	// 		"https://www.googleapis.com/auth/userinfo.profile"},
+	// }
+
 	return &GoogleOAuth{
 		ClientKey:    key,
 		ClientSecret: secret,
-		AuthUrl:      "https://accounts.google.com/o/oauth2/auth",
+		AuthUrl:      google.Endpoint.AuthURL,
 		TokenUrl:     "https://www.googleapis.com/oauth2/v4/token",
 		UserUrl:      "https://www.googleapis.com/oauth2/v3/userinfo",
 		RedirectUrl:  "http://localhost:3000/auth/signin/google/callback",
+		// Config:       cfg,
 	}, nil
 }
 
@@ -63,6 +76,7 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 	query.Set("access_type", "offline")
 	query.Set("response_type", "code")
 	query.Set("scope", "email")
+	query.Set("prompt", "consent")
 	query.Set("redirect_uri", google.RedirectUrl)
 	// ? How to use state
 	if state, err := rand.String(32); err == nil {
@@ -71,9 +85,7 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 
 	url := fmt.Sprintf("%s?%s", google.AuthUrl, query.Encode())
 
-	fmt.Println(url)
-
-	http.Redirect(w, r, url, http.StatusFound)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
@@ -93,6 +105,7 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 	tokenInfo.Provider = ProviderGoogle
 
 	json.NewEncoder(w).Encode(tokenInfo)
+
 }
 
 // middleware
