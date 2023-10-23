@@ -29,8 +29,6 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 
 		// TODO: Check if user is new on Signin endpoints
-		r.Get("/github", oauthHandlers.Github.Signin)
-		r.Get("/github/callback", oauthHandlers.Github.Callback)
 
 		r.Get("/google", oauthHandlers.Google.Signin)
 		r.Get("/google/callback", oauthHandlers.Google.Callback)
