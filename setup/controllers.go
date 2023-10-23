@@ -3,8 +3,9 @@ package setup
 import ctrls "github.com/AkifhanIlgaz/vocab-builder/controllers"
 
 type controllers struct {
-	BoxController   *ctrls.BoxController
-	UsersController *ctrls.UsersController
+	BoxController    *ctrls.BoxController
+	UsersController  *ctrls.UsersController
+	GoogleController *ctrls.GoogleController
 }
 
 func Controllers(services *services) *controllers {
@@ -20,8 +21,12 @@ func Controllers(services *services) *controllers {
 		TokenService: services.TokenService,
 	}
 
+	// ! Check Error
+	googleController, _ := ctrls.NewGoogleController(services.UserService)
+
 	return &controllers{
-		BoxController:   &boxController,
-		UsersController: &usersController,
+		BoxController:    &boxController,
+		UsersController:  &usersController,
+		GoogleController: &googleController,
 	}
 }

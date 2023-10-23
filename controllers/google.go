@@ -1,37 +1,40 @@
-package oauth
+package controllers
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 
+	"github.com/AkifhanIlgaz/vocab-builder/errors"
+	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
-type GoogleOAuth struct {
-	UserUrl string
+type GoogleController struct {
+	UserService *models.UserService
+	UserUrl     string
 	oauth2.Config
 }
 
-func NewGoogleOauth() (*GoogleOAuth, error) {
+func NewGoogleController(userService *models.UserService) (GoogleController, error) {
 	clientId := os.Getenv("GOOGLE_CLIENT_ID")
 	if clientId == "" {
-		return nil, errors.New("google client key required")
+		return GoogleController{}, errors.New("google client key required")
 	}
 
 	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
 	if clientSecret == "" {
-		return nil, errors.New("google secret key required")
+		return GoogleController{}, errors.New("google secret key required")
 	}
 
-	return &GoogleOAuth{
-		UserUrl: "https://www.googleapis.com/oauth2/v3/tokeninfo",
+	return GoogleController{
+		UserService: userService,
+		UserUrl:     "https://www.googleapis.com/oauth2/v3/tokeninfo",
 		Config: oauth2.Config{
 			ClientID:     clientId,
 			ClientSecret: clientSecret,
@@ -40,11 +43,10 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 			Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
 				"https://www.googleapis.com/auth/userinfo.profile"}},
 	}, nil
-
 }
 
-func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
-	authUrl := google.AuthCodeURL("", oauth2.AccessTypeOffline)
+func (controller *GoogleController) Signin(w http.ResponseWriter, r *http.Request) {
+	authUrl := controller.AuthCodeURL("", oauth2.AccessTypeOffline)
 
 	// TODO: Generate random string for state
 	// TODO: Store it on cache ?
@@ -52,10 +54,8 @@ func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, authUrl, http.StatusTemporaryRedirect)
 }
 
-func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
-	// TODO: Check state
-
-	token, err := google.Exchange(context.TODO(), r.URL.Query().Get("code"))
+func (controller *GoogleController) Callback(w http.ResponseWriter, r *http.Request) {
+	token, err := controller.Exchange(context.TODO(), r.URL.Query().Get("code"))
 	if err != nil {
 		fmt.Println(err)
 		http.Redirect(w, r, "http://localhost:8100/test/error", http.StatusUnauthorized)
@@ -71,51 +71,18 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:8100/test?info="+string(info), http.StatusTemporaryRedirect)
 }
 
-func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
-	accessToken := r.URL.Query().Get("access_token")
-
-	// TODO: Make an API call to userurl with access token Authorization
-	req, err := http.NewRequest("GET", google.UserUrl, nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		// TODO: Return with token is expired error
-
-		fmt.Println(err)
-		return
-	}
-
-	// TODO: Return user to the client
-
-	body, _ := io.ReadAll(res.Body)
-	var respBody map[string]string
-	json.Unmarshal(body, &respBody)
-
-	// TODO: Set r.Context with uid
-
-	json.NewEncoder(w).Encode(&respBody)
-
-}
-
-
-
-func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(refreshToken string) (*oauth2.Token, error) {
+func (controller *GoogleController) generateAccessTokenWithRefreshToken(refreshToken string) (*oauth2.Token, error) {
 	requestBodyMap := map[string]string{
 		"grant_type":    "refresh_token",
-		"client_id":     google.ClientID,
-		"client_secret": google.ClientSecret,
+		"client_id":     controller.ClientID,
+		"client_secret": controller.ClientSecret,
 		"refresh_token": refreshToken,
 	}
 	requestJSON, _ := json.Marshal(requestBodyMap)
 
 	req, err := http.NewRequest(
 		"POST",
-		google.Endpoint.TokenURL,
+		controller.Endpoint.TokenURL,
 		bytes.NewBuffer(requestJSON),
 	)
 	if err != nil {
