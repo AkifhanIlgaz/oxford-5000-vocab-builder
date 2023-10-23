@@ -10,12 +10,12 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"https://*", "http://*"},
+
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"*", "Accept", "Authorization", "Content-Type", "X-CSRF-Token", "idToken", "fileExtension", "type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
+		AllowCredentials: false,
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
@@ -28,20 +28,16 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		})
 		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 
-		r.Route("/signin", func(r chi.Router) {
-			// TODO: Check if user is new on Signin endpoints
-			r.Get("/github", oauthHandlers.Github.Signin)
-			r.Get("/github/callback", oauthHandlers.Github.Callback)
-			// TODO: Add refresh endpoint
+		// TODO: Check if user is new on Signin endpoints
+		r.Get("/github", oauthHandlers.Github.Signin)
+		r.Get("/github/callback", oauthHandlers.Github.Callback)
 
-			r.Get("/google", oauthHandlers.Google.Signin)
-			r.Get("/google/callback", oauthHandlers.Google.Callback)
-			r.Get("/google/refresh", oauthHandlers.Google.GenerateAccessTokenWithRefreshToken)
-		})
+		r.Get("/google", oauthHandlers.Google.Signin)
+		r.Get("/google/callback", oauthHandlers.Google.Callback)
 
 	})
 
-	r.Get("/test", oauthHandlers.Google.AccessTokenMiddleware)
+	r.Get("/request", oauthHandlers.Google.AccessTokenMiddleware)
 
 	r.Route("/box", func(r chi.Router) {
 		r.Get("/today", controllers.BoxController.GetTodaysWords)

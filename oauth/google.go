@@ -14,21 +14,6 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const (
-	invalidRequest     = "invalid_request"
-	invalidCredentials = "Invalid Credentials"
-)
-
-type tokenInfo struct {
-	Provider     Provider `json:"provider"`
-	AccessToken  string   `json:"access_token"`
-	ExpiresIn    int      `json:"expires_in"`
-	RefreshToken string   `json:"refresh_token"`
-	TokenType    string   `json:"token_type"`
-	Scope        string   `json:"scope"`
-	IdToken      string   `json:"id_token"`
-}
-
 type GoogleOAuth struct {
 	UserUrl string
 	oauth2.Config
@@ -51,7 +36,7 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 			ClientID:     clientId,
 			ClientSecret: clientSecret,
 			Endpoint:     google.Endpoint,
-			RedirectURL:  "http://localhost:3000/auth/signin/google/callback",
+			RedirectURL:  "http://localhost:3000/auth/google/callback",
 			Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
 				"https://www.googleapis.com/auth/userinfo.profile"}},
 	}, nil
@@ -59,32 +44,53 @@ func NewGoogleOauth() (*GoogleOAuth, error) {
 }
 
 func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
-	authUrl := google.AuthCodeURL("random state", oauth2.AccessTypeOffline)
+	authUrl := google.AuthCodeURL("", oauth2.AccessTypeOffline)
+
+	// TODO: Generate random string for state
+	// TODO: Store it on cache ?
 
 	http.Redirect(w, r, authUrl, http.StatusTemporaryRedirect)
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
+	// TODO: Check state
 
-	code := r.URL.Query().Get("code")
-
-	token, err := google.Exchange(context.TODO(), code, oauth2.AccessTypeOffline)
+	token, err := google.Exchange(context.TODO(), r.URL.Query().Get("code"))
 	if err != nil {
-		fmt.Println("err", err)
+		fmt.Println(err)
+		http.Redirect(w, r, "http://localhost:8100/test/error", http.StatusUnauthorized)
+		return
 	}
 
-	json.NewEncoder(w).Encode(token)
+	info, err := json.Marshal(&token)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
+	http.Redirect(w, r, "http://localhost:8100/test?info="+string(info), http.StatusTemporaryRedirect)
 }
 
 func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
-	var token oauth2.Token
+	accessToken := r.URL.Query().Get("access_token")
 
-	b, _ := io.ReadAll(r.Body)
+	// TODO: Make an API call to userurl with access token Authorization
+	req, err := http.NewRequest("GET", google.UserUrl, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	json.Unmarshal(b, &token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// TODO: Return with token is expired error
 
-	res, _ := google.Client(context.TODO(), &token).Get(google.UserUrl)
+		fmt.Println(err)
+		return
+	}
+
+	// TODO: Return user to the client
 
 	body, _ := io.ReadAll(res.Body)
 	var respBody map[string]string
@@ -96,9 +102,15 @@ func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.
 
 }
 
-func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.URL.Query().Get("refresh_token")
+func (google *GoogleOAuth) Request(w http.ResponseWriter, r *http.Request) {
+	accessToken := r.URL.Query().Get("access_token")
 
+	fmt.Println(accessToken)
+
+	http.Error(w, "Invalid access token", http.StatusUnauthorized)
+}
+
+func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(refreshToken string) (*oauth2.Token, error) {
 	requestBodyMap := map[string]string{
 		"grant_type":    "refresh_token",
 		"client_id":     google.ClientID,
@@ -114,6 +126,7 @@ func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWr
 	)
 	if err != nil {
 		fmt.Println(err)
+		return nil, fmt.Errorf("generate access token with refresh: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -121,42 +134,17 @@ func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWr
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		fmt.Println(err)
+		return nil, fmt.Errorf("generate access token with refresh: %w", err)
 	}
 
 	body, _ := io.ReadAll(res.Body)
 
-	var data tokenInfo
-	err = json.Unmarshal(body, &data)
+	var token oauth2.Token
+	err = json.Unmarshal(body, &token)
 	if err != nil {
+		return nil, err
 	}
 
-	enc := json.NewEncoder(w)
-	err = enc.Encode(&data)
+	return &token, nil
 
-}
-
-func (google *GoogleOAuth) createTokenRequest(r *http.Request) (*http.Request, error) {
-	code := r.URL.Query().Get("code")
-
-	requestBodyMap := map[string]string{
-		"grant_type":    "authorization_code",
-		"client_id":     google.ClientID,
-		"client_secret": google.ClientSecret,
-		"code":          code,
-		"redirect_uri":  google.RedirectURL,
-	}
-	requestJSON, _ := json.Marshal(requestBodyMap)
-
-	req, err := http.NewRequest(
-		"POST",
-		google.Endpoint.TokenURL,
-		bytes.NewBuffer(requestJSON),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create token request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	return req, nil
 }
