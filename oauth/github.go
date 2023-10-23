@@ -48,6 +48,7 @@ func (github *GithubOAuth) Signin(w http.ResponseWriter, r *http.Request) {
 	url := fmt.Sprintf("%s?%s", github.AuthUrl, query.Encode())
 
 	fmt.Println(url)
+	w.Header().Set("Origin", r.Header.Get("Origin")+"/")
 
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }

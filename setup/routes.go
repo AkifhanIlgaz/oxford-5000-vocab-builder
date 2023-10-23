@@ -1,10 +1,6 @@
 package setup
 
 import (
-	"fmt"
-	"net/http"
-
-	"github.com/AkifhanIlgaz/vocab-builder/context"
 	"github.com/AkifhanIlgaz/vocab-builder/oauth"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -14,14 +10,13 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 	r := chi.NewRouter()
 	r.Use(cors.Handler(cors.Options{
 		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"http://localhost:8100"},
+		AllowedOrigins: []string{"https://*", "http://*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:     []string{"*", "Accept", "Authorization", "Content-Type", "X-CSRF-Token", "idToken", "fileExtension", "type"},
-		ExposedHeaders:     []string{"Link"},
-		AllowCredentials:   true,
-		OptionsPassthrough: true,
-		MaxAge:             300, // Maximum value not ignored by any of major browsers
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*", "Accept", "Authorization", "Content-Type", "X-CSRF-Token", "idToken", "fileExtension", "type"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
 	r.Route("/auth", func(r chi.Router) {
@@ -46,19 +41,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 
 	})
 
-	r.Route("/test", func(r chi.Router) {
+	r.Get("/test", oauthHandlers.Google.AccessTokenMiddleware)
 
-		r.Use(middlewares.AccessTokenMiddleware.AccessToken)
-		r.Get("/access-token-middleware", func(w http.ResponseWriter, r *http.Request) {
-			uid := context.Uid(r.Context())
-
-			fmt.Fprint(w, uid)
-		})
-	})
-
-	r.Get("/x", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "hello")
-	})
 	r.Route("/box", func(r chi.Router) {
 		r.Get("/today", controllers.BoxController.GetTodaysWords)
 		r.Post("/levelup/{id}", controllers.BoxController.LevelUp)

@@ -2,6 +2,7 @@ package oauth
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/AkifhanIlgaz/vocab-builder/rand"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -18,16 +18,6 @@ const (
 	invalidRequest     = "invalid_request"
 	invalidCredentials = "Invalid Credentials"
 )
-
-type GoogleOAuth struct {
-	ClientKey    string
-	ClientSecret string
-	AuthUrl      string
-	TokenUrl     string
-	UserUrl      string
-	RedirectUrl  string
-	Config       oauth2.Config
-}
 
 type tokenInfo struct {
 	Provider     Provider `json:"provider"`
@@ -39,106 +29,71 @@ type tokenInfo struct {
 	IdToken      string   `json:"id_token"`
 }
 
+type GoogleOAuth struct {
+	UserUrl string
+	oauth2.Config
+}
+
 func NewGoogleOauth() (*GoogleOAuth, error) {
-	key := os.Getenv("GOOGLE_CLIENT_ID")
-	if key == "" {
+	clientId := os.Getenv("GOOGLE_CLIENT_ID")
+	if clientId == "" {
 		return nil, errors.New("google client key required")
 	}
 
-	secret := os.Getenv("GOOGLE_CLIENT_SECRET")
-	if secret == "" {
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	if clientSecret == "" {
 		return nil, errors.New("google secret key required")
 	}
 
-	// cfg := oauth2.Config{
-	// 	ClientID:     key,
-	// 	ClientSecret: secret,
-	// 	Endpoint:     google.Endpoint,
-	// 	RedirectURL:  "http://localhost:3000/auth/signin/google/callback",
-	// 	Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
-	// 		"https://www.googleapis.com/auth/userinfo.profile"},
-	// }
-
 	return &GoogleOAuth{
-		ClientKey:    key,
-		ClientSecret: secret,
-		AuthUrl:      google.Endpoint.AuthURL,
-		TokenUrl:     "https://www.googleapis.com/oauth2/v4/token",
-		UserUrl:      "https://www.googleapis.com/oauth2/v3/userinfo",
-		RedirectUrl:  "http://localhost:3000/auth/signin/google/callback",
-		// Config:       cfg,
+		UserUrl: "https://www.googleapis.com/oauth2/v3/tokeninfo",
+		Config: oauth2.Config{
+			ClientID:     clientId,
+			ClientSecret: clientSecret,
+			Endpoint:     google.Endpoint,
+			RedirectURL:  "http://localhost:3000/auth/signin/google/callback",
+			Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
+				"https://www.googleapis.com/auth/userinfo.profile"}},
 	}, nil
+
 }
 
 func (google *GoogleOAuth) Signin(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	query.Set("client_id", google.ClientKey)
-	query.Set("access_type", "offline")
-	query.Set("response_type", "code")
-	query.Set("scope", "email")
-	query.Set("prompt", "consent")
-	query.Set("redirect_uri", google.RedirectUrl)
-	// ? How to use state
-	if state, err := rand.String(32); err == nil {
-		query.Set("state", state)
-	}
+	authUrl := google.AuthCodeURL("random state", oauth2.AccessTypeOffline)
 
-	url := fmt.Sprintf("%s?%s", google.AuthUrl, query.Encode())
-
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, authUrl, http.StatusTemporaryRedirect)
 }
 
 func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
-	req, err := google.createTokenRequest(r)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
 
-	tokenInfo, err := google.exchangeCodeForTokens(req)
-	if err != nil {
-		fmt.Println(err)
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
-		return
-	}
-	tokenInfo.Provider = ProviderGoogle
+	code := r.URL.Query().Get("code")
 
-	json.NewEncoder(w).Encode(tokenInfo)
-
-}
-
-// middleware
-func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
-	accessToken := r.URL.Query().Get("access_token")
-
-	req, _ := http.NewRequest("GET", google.UserUrl, nil)
-
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	res, err := http.DefaultClient.Do(req)
+	token, err := google.Exchange(context.TODO(), code, oauth2.AccessTypeOffline)
 	if err != nil {
 		fmt.Println("err", err)
 	}
+
+	json.NewEncoder(w).Encode(token)
+
+}
+
+func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
+	var token oauth2.Token
+
+	b, _ := io.ReadAll(r.Body)
+
+	json.Unmarshal(b, &token)
+
+	res, _ := google.Client(context.TODO(), &token).Get(google.UserUrl)
 
 	body, _ := io.ReadAll(res.Body)
 	var respBody map[string]string
 	json.Unmarshal(body, &respBody)
 
-	if isInvalidRequest(respBody) {
-		// TODO: http return invalid token error
-		// Client will go to /refresh endpoint to obtain new access token
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(&respBody)
-		return
-	}
+	// TODO: Set r.Context with uid
 
 	json.NewEncoder(w).Encode(&respBody)
 
-}
-
-func isInvalidRequest(respBody map[string]string) bool {
-	return respBody["error"] == invalidRequest && respBody["error_description"] == invalidCredentials
 }
 
 func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +101,7 @@ func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWr
 
 	requestBodyMap := map[string]string{
 		"grant_type":    "refresh_token",
-		"client_id":     google.ClientKey,
+		"client_id":     google.ClientID,
 		"client_secret": google.ClientSecret,
 		"refresh_token": refreshToken,
 	}
@@ -154,7 +109,7 @@ func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(w http.ResponseWr
 
 	req, err := http.NewRequest(
 		"POST",
-		google.TokenUrl,
+		google.Endpoint.TokenURL,
 		bytes.NewBuffer(requestJSON),
 	)
 	if err != nil {
@@ -185,16 +140,16 @@ func (google *GoogleOAuth) createTokenRequest(r *http.Request) (*http.Request, e
 
 	requestBodyMap := map[string]string{
 		"grant_type":    "authorization_code",
-		"client_id":     google.ClientKey,
+		"client_id":     google.ClientID,
 		"client_secret": google.ClientSecret,
 		"code":          code,
-		"redirect_uri":  google.RedirectUrl,
+		"redirect_uri":  google.RedirectURL,
 	}
 	requestJSON, _ := json.Marshal(requestBodyMap)
 
 	req, err := http.NewRequest(
 		"POST",
-		google.TokenUrl,
+		google.Endpoint.TokenURL,
 		bytes.NewBuffer(requestJSON),
 	)
 	if err != nil {
@@ -204,24 +159,4 @@ func (google *GoogleOAuth) createTokenRequest(r *http.Request) (*http.Request, e
 	req.Header.Set("Accept", "application/json")
 
 	return req, nil
-}
-
-func (google *GoogleOAuth) exchangeCodeForTokens(r *http.Request) (*tokenInfo, error) {
-	resp, err := http.DefaultClient.Do(r)
-	if err != nil {
-		return nil, fmt.Errorf("exchange code for tokens: %w", err)
-	}
-
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("exchange code for tokens: %w", err)
-	}
-
-	var data tokenInfo
-	err = json.Unmarshal(respBody, &data)
-	if err != nil {
-		return nil, fmt.Errorf("exchange code for tokens: %w", err)
-	}
-
-	return &data, nil
 }
