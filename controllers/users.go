@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/AkifhanIlgaz/vocab-builder/context"
@@ -24,10 +25,14 @@ type AuthenticationResponse struct {
 }
 
 func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request) {
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	var data struct {
+		Email    string
+		Password string
+	}
+	body, _ := io.ReadAll(r.Body)
+	json.Unmarshal(body, &data)
 
-	user, err := controller.UserService.Create(email, password)
+	user, err := controller.UserService.Create(data.Email, data.Password)
 	if err != nil {
 		fmt.Fprintf(w, "%v", err)
 		return
@@ -56,16 +61,19 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 }
 
 func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request) {
-	// Extract email and password
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+	var data struct {
+		Email    string
+		Password string
+	}
+	body, _ := io.ReadAll(r.Body)
+	json.Unmarshal(body, &data)
 
 	// Get user from db
-	user, err := controller.UserService.GetByEmail(email)
+	user, err := controller.UserService.GetByEmail(data.Email)
 	if err != nil {
 		if errors.As(err, errors.ErrUserNotExist) {
 			// ? Redirect to signup page
-			http.Error(w, "User doesn't exist", http.StatusNotFound)
+			http.Redirect(w, r, "http://localhost:8100/signin", http.StatusUnauthorized)
 			return
 		}
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -73,7 +81,7 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 	}
 
 	// Check password
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(data.Password))
 	if err != nil {
 		http.Error(w, "Wrong password", http.StatusInternalServerError)
 		return

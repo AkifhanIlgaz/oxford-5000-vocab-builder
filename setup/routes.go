@@ -19,6 +19,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
+	// TODO: Uid middleware
+
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/signup", controllers.UsersController.Signup)
 		r.Post("/signin", controllers.UsersController.Signin)
@@ -29,8 +31,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		r.Get("/refresh", controllers.UsersController.RefreshAccessToken)
 
 		// TODO: Check if user is new on Signin endpoints
-		r.Get("/google", oauthHandlers.Google.Signin)
-		r.Get("/google/callback", oauthHandlers.Google.Callback)
+		r.Get("/google", controllers.GoogleController.Signin)
+		r.Get("/google/callback", controllers.GoogleController.Callback)
 
 	})
 
@@ -43,9 +45,4 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 	})
 
 	return r
-}
-
-func Auth(r *chi.Mux, controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middlewares *middlewares) error {
-
-	return nil
 }
