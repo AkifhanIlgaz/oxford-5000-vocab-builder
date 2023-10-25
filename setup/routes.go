@@ -36,9 +36,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 
 	})
 
-	r.Get("/request", oauthHandlers.Google.AccessTokenMiddleware)
-
 	r.Route("/box", func(r chi.Router) {
+		r.Use(middlewares.AccessTokenMiddleware.AccessToken)
 		r.Get("/today", controllers.BoxController.GetTodaysWords)
 		r.Post("/levelup/{id}", controllers.BoxController.LevelUp)
 		r.Post("/leveldown/{id}", controllers.BoxController.LevelDown)

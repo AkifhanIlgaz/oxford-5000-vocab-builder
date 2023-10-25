@@ -35,7 +35,7 @@ func (middleware *AccessTokenMiddleware) AccessToken(next http.Handler) http.Han
 		// Parse access token
 		token, err := middleware.TokenService.ParseAccessToken(tokenString)
 		if err != nil {
-			fmt.Fprint(w, "parse access token", err)
+			fmt.Println(w, "parse access token", err)
 			next.ServeHTTP(w, r)
 			return
 		}

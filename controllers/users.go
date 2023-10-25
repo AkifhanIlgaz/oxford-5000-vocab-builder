@@ -76,6 +76,7 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 			http.Redirect(w, r, "http://localhost:8100/signin", http.StatusUnauthorized)
 			return
 		}
+		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -90,12 +91,14 @@ func (controller *UsersController) Signin(w http.ResponseWriter, r *http.Request
 	// Create new access token and refresh token for the user
 	accessToken, err := controller.TokenService.NewAccessToken(user.Uid.Hex())
 	if err != nil {
+		fmt.Println(err)
 		fmt.Fprintf(w, "%v", err)
 		return
 	}
 
 	refreshToken, err := controller.TokenService.NewRefreshToken(user.Uid.Hex())
 	if err != nil {
+		fmt.Println(err)
 		fmt.Fprintf(w, "%v", err)
 		return
 	}
@@ -121,14 +124,17 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 }
 
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.FormValue("refreshToken")
+	refreshToken := r.URL.Query().Get("refresh_token")
 	if refreshToken == "" {
 		http.Error(w, "Refresh token required", http.StatusBadRequest)
 		return
 	}
 
+	fmt.Println(refreshToken)
+
 	newAccessToken, newRefreshToken, err := controller.TokenService.RefreshAccessToken(refreshToken)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
@@ -139,6 +145,7 @@ func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *
 		RefreshToken: newRefreshToken,
 	})
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}

@@ -23,7 +23,7 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 	words, err := bc.BoxService.GetTodaysWords(uid)
 	if len(words) == 0 {
 		if err := bc.BoxService.CreateWordBox(uid); err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			// http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 		words, err = bc.BoxService.GetTodaysWords(uid)

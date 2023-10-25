@@ -112,7 +112,9 @@ func (service *TokenService) RefreshAccessToken(refreshToken string) (newAccessT
 	err = service.RefreshTokenCollection.FindOneAndUpdate(context.TODO(), bson.M{
 		"refreshToken": refreshToken,
 	}, bson.M{
-		"refreshToken": newRefreshToken,
+		"$set": bson.M{
+			"refreshToken": newRefreshToken,
+		},
 	}).Decode(&info)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
