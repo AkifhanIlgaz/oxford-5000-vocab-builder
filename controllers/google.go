@@ -58,7 +58,7 @@ func (controller *GoogleController) Callback(w http.ResponseWriter, r *http.Requ
 	token, err := controller.Exchange(context.TODO(), r.URL.Query().Get("code"))
 	if err != nil {
 		fmt.Println(err)
-		http.Redirect(w, r, "http://localhost:8100/test/error", http.StatusUnauthorized)
+		http.Redirect(w, r, "http://localhost:8100/social-login", http.StatusUnauthorized)
 		return
 	}
 
@@ -68,7 +68,7 @@ func (controller *GoogleController) Callback(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	http.Redirect(w, r, "http://localhost:8100/test?info="+string(info), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "http://localhost:8100/social-login?info="+string(info), http.StatusTemporaryRedirect)
 }
 
 func (controller *GoogleController) generateAccessTokenWithRefreshToken(refreshToken string) (*oauth2.Token, error) {

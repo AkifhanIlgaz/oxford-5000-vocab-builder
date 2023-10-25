@@ -23,6 +23,7 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 	words, err := bc.BoxService.GetTodaysWords(uid)
 	if len(words) == 0 {
 		if err := bc.BoxService.CreateWordBox(uid); err != nil {
+			fmt.Println(err)
 			// http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
@@ -38,6 +39,7 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 
 	for _, i := range rand.Perm(len(words))[:10] {
 		wordInfo, _ := bc.WordService.GetWord(words[i].Id)
+		fmt.Println(wordInfo)
 		wordInfos = append(wordInfos, wordInfo)
 	}
 

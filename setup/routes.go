@@ -19,9 +19,8 @@ func Routes(controllers *controllers, oauthHandlers *oauth.OAuthHandlers, middle
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	// TODO: Uid middleware
-
 	r.Route("/auth", func(r chi.Router) {
+		// ! OK
 		r.Post("/signup", controllers.UsersController.Signup)
 		r.Post("/signin", controllers.UsersController.Signin)
 		r.Group(func(r chi.Router) {

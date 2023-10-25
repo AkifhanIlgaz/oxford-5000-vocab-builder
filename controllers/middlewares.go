@@ -47,6 +47,8 @@ func (middleware *AccessTokenMiddleware) AccessToken(next http.Handler) http.Han
 			return
 		}
 
+		fmt.Println(uid)
+
 		ctx := r.Context()
 		ctx = context.WithUid(ctx, uid)
 		r = r.WithContext(ctx)

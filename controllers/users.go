@@ -20,8 +20,8 @@ type UsersController struct {
 }
 
 type AuthenticationResponse struct {
-	AccessToken  string `json:"accessToken"`
-	RefreshToken string `json:"refreshToken"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
 }
 
 func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request) {
