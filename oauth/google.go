@@ -71,39 +71,6 @@ func (google *GoogleOAuth) Callback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "http://localhost:8100/test?info="+string(info), http.StatusTemporaryRedirect)
 }
 
-func (google *GoogleOAuth) AccessTokenMiddleware(w http.ResponseWriter, r *http.Request) {
-	accessToken := r.URL.Query().Get("access_token")
-
-	// TODO: Make an API call to userurl with access token Authorization
-	req, err := http.NewRequest("GET", google.UserUrl, nil)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		// TODO: Return with token is expired error
-
-		fmt.Println(err)
-		return
-	}
-
-	// TODO: Return user to the client
-
-	body, _ := io.ReadAll(res.Body)
-	var respBody map[string]string
-	json.Unmarshal(body, &respBody)
-
-	// TODO: Set r.Context with uid
-
-	json.NewEncoder(w).Encode(&respBody)
-
-}
-
-
-
 func (google *GoogleOAuth) GenerateAccessTokenWithRefreshToken(refreshToken string) (*oauth2.Token, error) {
 	requestBodyMap := map[string]string{
 		"grant_type":    "refresh_token",

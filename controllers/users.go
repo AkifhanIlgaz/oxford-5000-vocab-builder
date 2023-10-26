@@ -118,19 +118,20 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 
 	err := controller.TokenService.DeleteRefreshToken(uid)
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
 		return
 	}
 }
 
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.URL.Query().Get("refresh_token")
+	refreshToken := r.Header.Get("refresh_token")
 	if refreshToken == "" {
 		http.Error(w, "Refresh token required", http.StatusBadRequest)
 		return
 	}
 
-	fmt.Println(refreshToken)
+	// TODO: Refresh access token based on provider
 
 	newAccessToken, newRefreshToken, err := controller.TokenService.RefreshAccessToken(refreshToken)
 	if err != nil {

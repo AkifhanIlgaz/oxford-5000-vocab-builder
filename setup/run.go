@@ -27,7 +27,7 @@ func Run(port string) error {
 
 	controllers := Controllers(services)
 
-	middlewares := Middlewares(services)
+	middlewares := Middlewares(services, oauthHandlers.Google)
 
 	r := Routes(controllers, oauthHandlers, middlewares)
 

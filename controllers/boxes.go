@@ -39,7 +39,6 @@ func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) 
 
 	for _, i := range rand.Perm(len(words))[:10] {
 		wordInfo, _ := bc.WordService.GetWord(words[i].Id)
-		fmt.Println(wordInfo)
 		wordInfos = append(wordInfos, wordInfo)
 	}
 
