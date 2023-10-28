@@ -59,8 +59,6 @@ func (middleware *AccessTokenMiddleware) withEmailProvider(next http.Handler, w 
 
 	uid, err := token.Claims.GetSubject()
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println(r.Response.Status)
 		next.ServeHTTP(w, r)
 		return
 	}

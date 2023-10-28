@@ -20,6 +20,13 @@ type BoxController struct {
 // OK
 func (bc *BoxController) GetTodaysWords(w http.ResponseWriter, r *http.Request) {
 	uid := context.Uid(r.Context())
+
+	if uid == "" {
+		fmt.Println("invalid")
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
 	words, err := bc.BoxService.GetTodaysWords(uid)
 	if len(words) == 0 {
 		if err := bc.BoxService.CreateWordBox(uid); err != nil {

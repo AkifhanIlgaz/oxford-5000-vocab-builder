@@ -80,7 +80,7 @@ func (service *TokenService) NewRefreshToken(uid string) (string, error) {
 		RefreshToken: refreshToken,
 	})
 	if err != nil {
-		return "", fmt.Errorf("new access token: %w", err)
+		return "", fmt.Errorf("new refresh token: %w", err)
 	}
 
 	return refreshToken, nil

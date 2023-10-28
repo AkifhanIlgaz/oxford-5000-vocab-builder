@@ -125,7 +125,15 @@ func (controller *UsersController) Signout(w http.ResponseWriter, r *http.Reques
 }
 
 func (controller *UsersController) RefreshAccessToken(w http.ResponseWriter, r *http.Request) {
-	refreshToken := r.Header.Get("refresh_token")
+	refreshToken, err := parseBearer(r.Header.Get("Authorization"))
+	if err != nil {
+		fmt.Println("parse bearer", err)
+		http.Error(w, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(refreshToken)
+
 	if refreshToken == "" {
 		http.Error(w, "Refresh token required", http.StatusBadRequest)
 		return
