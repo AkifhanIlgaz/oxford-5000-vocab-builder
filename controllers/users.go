@@ -34,19 +34,23 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 
 	user, err := controller.UserService.Create(data.Email, data.Password)
 	if err != nil {
-		fmt.Fprintf(w, "%v", err)
+		if errors.As(err, errors.ErrEmailTaken) {
+			http.Error(w, "Email is already used", http.StatusBadRequest)
+			return
+		}
+		errors.InternalServerError(w)
 		return
 	}
 
 	accessToken, err := controller.TokenService.NewAccessToken(user.Uid.Hex())
 	if err != nil {
-		fmt.Fprintf(w, "%v", err)
+		errors.InternalServerError(w)
 		return
 	}
 
 	refreshToken, err := controller.TokenService.NewRefreshToken(user.Uid.Hex())
 	if err != nil {
-		fmt.Fprintf(w, "%v", err)
+		errors.InternalServerError(w)
 		return
 	}
 
@@ -56,6 +60,7 @@ func (controller *UsersController) Signup(w http.ResponseWriter, r *http.Request
 	})
 	if err != nil {
 		fmt.Println(err)
+		errors.InternalServerError(w)
 		return
 	}
 }

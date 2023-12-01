@@ -68,8 +68,6 @@ type refreshTokenInfo struct {
 }
 
 func (service *TokenService) NewRefreshToken(uid string) (string, error) {
-	// ! We don't need to check whether user exists since we are checking it when client wants to access user information
-
 	refreshToken, err := rand.String(32)
 	if err != nil {
 		return "", fmt.Errorf("new refresh token: %w", err)

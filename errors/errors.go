@@ -1,6 +1,9 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 var (
 	ErrEmailTaken    error = errors.New("email is taken")
@@ -18,4 +21,8 @@ var (
 
 func MongoError(err error) error {
 	return Join(ErrMongo, err)
+}
+
+func InternalServerError(w http.ResponseWriter) {
+	http.Error(w, "Something went wrong", http.StatusInternalServerError)
 }
