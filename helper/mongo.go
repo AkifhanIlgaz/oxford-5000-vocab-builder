@@ -43,7 +43,7 @@ func UpdatePhonetics(collection *mongo.Collection) {
 		collection.UpdateOne(context.TODO(), bson.M{
 			"source": word.Source,
 		}, bson.D{
-		{"$set", bson.D{
+			{"$set", bson.D{
 				{"header.audio", parsedWord.Header.Audio},
 			}},
 		})

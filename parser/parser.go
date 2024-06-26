@@ -12,10 +12,18 @@ import (
 func ParseWord(wordUrl string) (models.WordInfo, error) {
 	var wordInfo models.WordInfo
 
-	resp, err := http.Get(wordUrl)
+	req, err := http.NewRequest(http.MethodGet, wordUrl, nil)
 	if err != nil {
-		return wordInfo, fmt.Errorf("parsing word: %w", err)
+		return wordInfo, fmt.Errorf("client: could not create request: %s\n", err)
+
 	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return wordInfo, fmt.Errorf("client: error making http request: %s\n", err)
+	}
+
 	defer resp.Body.Close()
 
 	document, err := goquery.NewDocumentFromReader(resp.Body)
@@ -23,6 +31,9 @@ func ParseWord(wordUrl string) (models.WordInfo, error) {
 		return wordInfo, fmt.Errorf("parsing word: %w", err)
 	}
 
+	if document == nil {
+		return wordInfo, fmt.Errorf("parsing word: %w", err)
+	}
 	mainContainer := document.Find("#entryContent")
 
 	parseHeader(mainContainer.Find(".webtop"), &wordInfo)
@@ -51,8 +62,7 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 	})
 
 	// Audio
-
-	mainContainer.Find(`span.phonetics div > div`).Slice(0, 2).Each(func(i int, s *goquery.Selection) {
+	mainContainer.Find(`span.phonetics div > div`).Each(func(i int, s *goquery.Selection) {
 		audioUrl, _ := s.Attr("data-src-mp3")
 
 		// We don't need to check `pron-us` since there is only two possibilities
@@ -67,7 +77,6 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 }
 
 func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
-
 	mainContainer.Each(func(i int, s *goquery.Selection) {
 		var definition models.Definition
 

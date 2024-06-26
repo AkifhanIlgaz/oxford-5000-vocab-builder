@@ -9,22 +9,21 @@ import (
 )
 
 type WordInfo struct {
-	Id          int          `json:"id"`
-	Box         int          `json:"box"`
-	Source      string       `json:"source"`
-	Word        string       `json:"word"`
-	Header      Header       `json:"header"`
+	Index  int    `json:"index"`
+	Source string `json:"source"`
+	Word   string `json:"word"`
+	Header
 	Definitions []Definition `json:"definitions"`
 	Idioms      []Idiom      `json:"idioms"`
 }
 
 type Header struct {
 	Audio struct {
-		UK string `json:"UK"`
-		US string `json:"US"`
-	} `json:"audio"`
-	PartOfSpeech string `json:"partOfSpeech"`
-	CEFRLevel    string `json:"CEFRLevel"`
+		UK string `json:"UK" bson:"UK"`
+		US string `json:"US" bson:"US"`
+	} `json:"audio" bson:"audio"`
+	PartOfSpeech string `json:"partOfSpeech" bson:"partOfSpeech"`
+	CEFRLevel    string `json:"CEFRLevel" bson:"CEFRLevel"`
 }
 
 type Definition struct {
