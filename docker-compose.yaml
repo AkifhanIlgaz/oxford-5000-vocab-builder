@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: always
+    env_file:
+      - ./app.env
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb:/data/db
+      - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
+      - ./oxford-5000.json:/data/oxford-5000.json
+
+volumes:
+  mongodb:

@@ -5,12 +5,39 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/AkifhanIlgaz/vocab-builder/models"
 	"github.com/PuerkitoBio/goquery"
 )
 
-func ParseWord(wordUrl string) (models.WordInfo, error) {
-	var wordInfo models.WordInfo
+type WordInfo struct {
+	Index  int    `json:"index"`
+	Source string `json:"source"`
+	Word   string `json:"word"`
+	Header
+	Definitions []Definition `json:"definitions"`
+	Idioms      []Idiom      `json:"idioms"`
+}
+
+type Header struct {
+	Audio struct {
+		UK string `json:"UK" bson:"UK"`
+		US string `json:"US" bson:"US"`
+	} `json:"audio" bson:"audio"`
+	PartOfSpeech string `json:"partOfSpeech" bson:"partOfSpeech"`
+	CEFRLevel    string `json:"CEFRLevel" bson:"CEFRLevel"`
+}
+
+type Definition struct {
+	Meaning  string   `json:"meaning"`
+	Examples []string `json:"examples"`
+}
+
+type Idiom struct {
+	Usage       string       `json:"usage"`
+	Definitions []Definition `json:"definition"`
+}
+
+func ParseWord(wordUrl string) (WordInfo, error) {
+	var wordInfo WordInfo
 
 	req, err := http.NewRequest(http.MethodGet, wordUrl, nil)
 	if err != nil {
@@ -44,7 +71,7 @@ func ParseWord(wordUrl string) (models.WordInfo, error) {
 	return wordInfo, nil
 }
 
-func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
+func parseHeader(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 	// HeadingWord
 	mainContainer.Find(".headword").First().Each(func(i int, s *goquery.Selection) {
 		wordInfo.Word = s.Text()
@@ -76,9 +103,9 @@ func parseHeader(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 
 }
 
-func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
+func parseDefinitions(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 	mainContainer.Each(func(i int, s *goquery.Selection) {
-		var definition models.Definition
+		var definition Definition
 
 		s.Find("span.def").Each(func(i int, s *goquery.Selection) {
 			definition.Meaning = s.Text()
@@ -94,13 +121,13 @@ func parseDefinitions(mainContainer *goquery.Selection, wordInfo *models.WordInf
 
 }
 
-func parseIdioms(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
+func parseIdioms(mainContainer *goquery.Selection, wordInfo *WordInfo) {
 	mainContainer.Each(func(i int, s *goquery.Selection) {
-		var idiom models.Idiom
+		var idiom Idiom
 		idiom.Usage = s.Find("div.top-container").Text()
 
 		s.Find(`ol[class^="sense"] li.sense`).Each(func(i int, s *goquery.Selection) {
-			var definition models.Definition
+			var definition Definition
 			definition.Meaning = s.Find("span.def").Text()
 
 			s.Find("ul.examples li span.x").Each(func(i int, s *goquery.Selection) {
@@ -110,6 +137,6 @@ func parseIdioms(mainContainer *goquery.Selection, wordInfo *models.WordInfo) {
 			idiom.Definitions = append(idiom.Definitions, definition)
 		})
 		wordInfo.Idioms = append(wordInfo.Idioms, idiom)
-		idiom = models.Idiom{}
+		idiom = Idiom{}
 	})
 }
