@@ -9,9 +9,9 @@ services:
     ports:
       - '27017:27017'
     volumes:
-      - mongodb:/data/db
+      - mongodb_data:/data/db
       - ./init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh
       - ./oxford-5000.json:/data/oxford-5000.json
 
 volumes:
-  mongodb:
+  mongodb_data:
